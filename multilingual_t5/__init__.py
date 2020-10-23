@@ -17,6 +17,3 @@
 import multilingual_t5.preprocessors
 import multilingual_t5.tasks
 import multilingual_t5.utils
-
-# Version number.
-from multilingual_t5.version import __version__
