@@ -40,7 +40,7 @@ mT5 achieves state-of-the-art performance on many
 For example, on zero-shot classification and QA tasks:
 
 | Model | XNLI (acc.) | PAWS-X (acc.) | XQuAD (F1/EM) | MLQA (F1/EM) | TyDiQA-GoldP (F1/EM) |
-| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| ---- | ---- | ---- | ---- | ---- | ---- |
 | mBERT | 65.4 | 81.9 | 62.2 / 49.4 | 61.4 / 44.2 | 59.7 / 43.9 |
 | XLM | 69.1 | 80.9 | 61.2 / 44.3 | 48.5 / 32.6 | 43.6 / 29.1 |
 | InfoXLM | 81.4 | - | - / - | 73.6 / 55.2 | - / - |
@@ -120,7 +120,7 @@ t5_mesh_transformer \
   --model_dir="${MODEL_DIR}" \
   --gin_file="${PRETRAINED_DIR}/operative_config.gin" \
   --gin_file="sequence_lengths/xnli_zeroshot.gin" \
-  --gin_param="utils.tpu_mesh_shape.tpu_topology = '256'" \
+  --gin_param="utils.tpu_mesh_shape.tpu_topology = 'v3-256'" \
   --gin_param="MIXTURE_NAME = '${TASK}'" \
   --gin_param="utils.run.train_steps=$((PRETRAINED_STEPS+FINETUNE_STEPS))" \
   --gin_param="utils.run.init_checkpoint='${PRETRAINED_DIR}/model.ckpt-${PRETRAINED_STEPS}'" \
