@@ -107,7 +107,7 @@ export TPU=yourtpu
 ctpu up   --name=$TPU   --project=$PROJECT  --zone=$ZONE   --tpu-size=v3-256   --tpu-only   --noconf
 
 TASK=xnli_zeroshot
-PRETRAINED_DIR=gs://mt5-data/pretrained_models/large
+PRETRAINED_DIR=gs://t5-data/pretrained_models/mt5/large
 PRETRAINED_STEPS=1000000
 FINETUNE_STEPS=20000
 MODEL_DIR="${BUCKET}${TASK}"
