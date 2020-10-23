@@ -35,22 +35,23 @@ Yiddish, Yoruba, Zulu.
 
 ## Results
 
-mT5 achieves state-of-the-art performance on many
-[XTREME](https://github.com/google-research/xtreme) tasks, as of October 2020.
-For example, on zero-shot classification and QA tasks:
+mT5 achieves state-of-the-art performance on many cross-lingual NLP tasks, as
+of October 2020. For example, on
+[XTREME](https://github.com/google-research/xtreme) zero-shot classification,
+structured prediction and QA tasks (showing F1/EM scores):
 
-| Model | XNLI (acc.) | PAWS-X (acc.) | XQuAD (F1/EM) | MLQA (F1/EM) | TyDiQA-GoldP (F1/EM) |
-| ---- | ---- | ---- | ---- | ---- | ---- |
-| mBERT | 65.4 | 81.9 | 62.2 / 49.4 | 61.4 / 44.2 | 59.7 / 43.9 |
-| XLM | 69.1 | 80.9 | 61.2 / 44.3 | 48.5 / 32.6 | 43.6 / 29.1 |
-| InfoXLM | 81.4 | - | - / - | 73.6 / 55.2 | - / - |
-| Phang et al. (2020) | 80.4 | 87.7 | 77.2 / 61.3 | 72.3 / 53.5 | 76.0 / 59.5 |
-| XLM-R | 79.2 | 86.4 | 76.6 / 60.8 | 71.6 / 53.2 | 65.1 / 45.0 |
-| mT5-Small | 67.5 | 82.4 | 58.1 / 42.5 | 54.6 / 37.1 | 34.9 / 23.9 |
-| mT5-Base | 75.4 | 87.4 | 67.0 / 49.0 | 64.6 / 45.0 | 58.1 / 42.8 |
-| mT5-Large | 81.1 | 89.6 | 77.8 / 61.5 | 71.2 / 51.7 | 57.8 / 41.1 |
-| mT5-XL | 82.9 | **90.2** | 79.5 / 63.6 | 73.5 / 54.5 | 77.3 / 61.5 |
-| mT5-XXL (75% trained) | **84.8** | 89.2 | **81.9 / 65.7** | **75.5 / 56.9** | **80.8 / 66.3** |
+| Model | XNLI | PAWS-X | WikiAnn-NER | XQuAD | MLQA | TyDiQA-GoldP |
+| ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| mBERT | 65.4 | 81.9 | 62.2 | 64.5 / 49.4 | 61.4 / 44.2 | 59.7 / 43.9 |
+| XLM | 69.1 | 80.9 | 61.2 | 59.8 / 44.3 | 48.5 / 32.6 | 43.6 / 29.1 |
+| InfoXLM | 81.4 | - | - | - / - | 73.6 / 55.2 | - / - |
+| X-STILTs | 80.4 | 87.7 | 64.7 | 77.2 / 61.3 | 72.3 / 53.5 | 76.0 / 59.5 |
+| XLM-R | 79.2 | 86.4 | 65.4 | 76.6 / 60.8 | 71.6 / 53.2 | 65.1 / 45.0 |
+| mT5-Small | 67.5 | 82.4 | 51.0 | 58.1 / 42.5 | 54.6 / 37.1 | 34.9 / 23.9 |
+| mT5-Base | 75.4 | 87.4 | 56.6 | 67.0 / 49.0 | 64.6 / 45.0 | 58.1 / 42.8 |
+| mT5-Large | 81.1 | 89.6 | 58.8 | 77.8 / 61.5 | 71.2 / 51.7 | 57.8 / 41.1 |
+| mT5-XL | 82.9 | **90.2** | 65.7 | 79.5 / 63.6 | 73.5 / 54.5 | 77.3 / 61.5 |
+| mT5-XXL (75% trained) | **84.8** | 89.2 | **69.2** | **81.9 / 65.7** | **75.5 / 56.9** | **80.8 / 66.3** |
 
 Check back here for updated results after our XXL model finishes training.
 
@@ -58,10 +59,18 @@ Check back here for updated results after our XXL model finishes training.
 
 ### Training
 
-To run this code, you need to install the
-[t5 library](https://pypi.org/project/t5/). General instructions for training, fine-tuning, evaluation, and exporting models for inference can be found in the [t5 repo](https://github.com/google-research/text-to-text-transfer-transformer). In order to use the additional mT5 tasks provided in this library with the `t5_mesh_transformer commands`, run from this directory and add the flag `--module_import="multilingual_t5.tasks"`.
+To run this code, you need to install the [t5
+library](https://pypi.org/project/t5/). General instructions for training,
+fine-tuning, evaluation, and exporting models for inference can be found in the
+[t5
+repo](https://github.com/google-research/text-to-text-transfer-transformer). In
+order to use the additional mT5 tasks provided in this library with the
+`t5_mesh_transformer` command, run from this directory and add the flag
+`--module_import="multilingual_t5.tasks"`.
 
-Example command to train a mT5-Large model on the [mc4](https://www.tensorflow.org/datasets/catalog/c4#c4multilingual_nights_stay) task from scratch as described in the paper.
+To train an `mT5-Large` model on the
+[mc4](https://www.tensorflow.org/datasets/catalog/c4#c4multilingual_nights_stay)
+task from scratch as described in the paper:
 
 ```
 export PROJECT=yourproject
@@ -69,7 +78,7 @@ export ZONE=yourzone
 export BUCKET=yourbucket
 export TPU=yourtpu
 
-ctpu up   --name=$TPU   --project=$PROJECT  --zone=$ZONE   --tpu-size=v3-256   --tpu-only   --noconf
+ctpu up --name=$TPU --project=$PROJECT --zone=$ZONE --tpu-size=v3-256 --tpu-only --noconf
 
 TASK=mc4
 MODEL_DIR="${BUCKET}${TASK}"
@@ -96,7 +105,7 @@ t5_mesh_transformer \
 
 ### Fine-Tuning
 
-As an example to finetune `XNLI_zeroshot` task on mT5-Large model by running (from this directory):
+As an example, to finetune the `mT5-Large` model on the `XNLI_zeroshot` task:
 
 ```
 export PROJECT=yourproject
@@ -104,7 +113,7 @@ export ZONE=yourzone
 export BUCKET=yourbucket
 export TPU=yourtpu
 
-ctpu up   --name=$TPU   --project=$PROJECT  --zone=$ZONE   --tpu-size=v3-256   --tpu-only   --noconf
+ctpu up --name=$TPU --project=$PROJECT --zone=$ZONE --tpu-size=v3-256 --tpu-only --noconf
 
 TASK=xnli_zeroshot
 PRETRAINED_DIR=gs://t5-data/pretrained_models/mt5/large
@@ -133,9 +142,7 @@ The remaining experiments are shown in the [tasks.py](multilingual_t5/tasks.py) 
 
 ## Released Model Checkpoints
 
-To facilitate reproducibility and future work, we have released the model checkpoints for pretraining models.
-
-We have released the following checkpoints for pre-trained models described in our paper:
+We have released the following checkpoints for pre-trained models described in our [paper][paper]:
 
 * **mT5-Small** (300 million parameters): [gs://t5-data/pretrained_models/mt5/small](https://console.cloud.google.com/storage/browser/t5-data/pretrained_models/mt5/small/)
 * **mT5-Base** (600 million parameters): [gs://t5-data/pretrained_models/mt5/base](https://console.cloud.google.com/storage/browser/t5-data/pretrained_models/mt5/base/)
