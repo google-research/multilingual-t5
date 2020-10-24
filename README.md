@@ -38,20 +38,20 @@ Yiddish, Yoruba, Zulu.
 mT5 achieves state-of-the-art performance on many cross-lingual NLP tasks, as
 of October 2020. For example, on
 [XTREME](https://github.com/google-research/xtreme) zero-shot classification,
-structured prediction and QA tasks (showing F1/EM scores):
+structured prediction and QA tasks (showing F1 scores):
 
 | Model | XNLI | PAWS-X | WikiAnn-NER | XQuAD | MLQA | TyDiQA-GoldP |
 | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-| mBERT | 65.4 | 81.9 | 62.2 | 64.5 / 49.4 | 61.4 / 44.2 | 59.7 / 43.9 |
-| XLM | 69.1 | 80.9 | 61.2 | 59.8 / 44.3 | 48.5 / 32.6 | 43.6 / 29.1 |
-| InfoXLM | 81.4 | - | - | - / - | 73.6 / 55.2 | - / - |
-| X-STILTs | 80.4 | 87.7 | 64.7 | 77.2 / 61.3 | 72.3 / 53.5 | 76.0 / 59.5 |
-| XLM-R | 79.2 | 86.4 | 65.4 | 76.6 / 60.8 | 71.6 / 53.2 | 65.1 / 45.0 |
-| mT5-Small | 67.5 | 82.4 | 51.0 | 58.1 / 42.5 | 54.6 / 37.1 | 34.9 / 23.9 |
-| mT5-Base | 75.4 | 87.4 | 56.6 | 67.0 / 49.0 | 64.6 / 45.0 | 58.1 / 42.8 |
-| mT5-Large | 81.1 | 89.6 | 58.8 | 77.8 / 61.5 | 71.2 / 51.7 | 57.8 / 41.1 |
-| mT5-XL | 82.9 | **90.2** | 65.7 | 79.5 / 63.6 | 73.5 / 54.5 | 77.3 / 61.5 |
-| mT5-XXL (75% trained) | **84.8** | 89.2 | **69.2** | **81.9 / 65.7** | **75.5 / 56.9** | **80.8 / 66.3** |
+| mBERT | 65.4 | 81.9 | 62.2 | 64.5 | 61.4 | 59.7 |
+| XLM | 69.1 | 80.9 | 61.2 | 59.8 | 48.5 | 43.6 |
+| InfoXLM | 81.4 | - | - | - | 73.6 | - |
+| X-STILTs | 80.4 | 87.7 | 64.7 | 77.2 | 72.3 | 76.0 |
+| XLM-R | 79.2 | 86.4 | 65.4 | 76.6 | 71.6 | 65.1 |
+| mT5-Small | 67.5 | 82.4 | 51.0 | 58.1 | 54.6 | 34.9 |
+| mT5-Base | 75.4 | 87.4 | 56.6 | 67.0 | 64.6 | 58.1 |
+| mT5-Large | 81.1 | 89.6 | 58.8 | 77.8 | 71.2 | 57.8 |
+| mT5-XL | 82.9 | **90.2** | 65.7 | 79.5 | 73.5 | 77.3 |
+| mT5-XXL (75% trained) | **84.8** | 89.2 | **69.2** | **81.9** | **75.5** | **80.8** |
 
 Check back here for updated results after our XXL model finishes training.
 
