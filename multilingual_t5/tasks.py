@@ -67,7 +67,7 @@ for lang in MC4_LANGS:
   t5.data.TaskRegistry.add(
       "mc4.{}".format(lang.replace("-", "_")),
       t5.data.TfdsTask,
-      tfds_name="c4/multilingual:3.0.0",
+      tfds_name="c4/multilingual:3.0.1",
       splits={"train": lang,
               "validation": f"{lang}-validation"},
       text_preprocessor=functools.partial(
