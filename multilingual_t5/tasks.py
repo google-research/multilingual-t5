@@ -39,9 +39,7 @@ DEFAULT_OUTPUT_FEATURES = {
         vocabulary=DEFAULT_VOCAB, add_eos=True)
 }
 
-# Use all multilingual C4 languages except Bosnian ('bs'), which has a very
-# small number of documents (<10k), and could lead to overfitting.
-MC4_LANGS = [lang for lang in tfds.text.c4.MC4_LANGUAGES if lang != "bs"]
+MC4_LANGS = tfds.text.c4.MC4_LANGUAGES
 
 # Multilingual BERT was trained on 104 languages. We include 103 of these
 # languages, as tfds.wikipedia doesn't distinguish between simplified and
@@ -77,9 +75,8 @@ for lang in MC4_LANGS:
       output_features=DEFAULT_OUTPUT_FEATURES,
       metric_fns=[])
 
-_mc4_ = ["mc4.{}".format(lang.replace("-", "_")) for lang in MC4_LANGS]
-t5.data.MixtureRegistry.add(
-    "mc4", _mc4_, default_rate=DEFAULT_MIX_RATE)
+mc4 = ["mc4.{}".format(lang.replace("-", "_")) for lang in MC4_LANGS]
+t5.data.MixtureRegistry.add("mc4", mc4, default_rate=DEFAULT_MIX_RATE)
 
 # Wikipedia
 for lang in WIKI_LANGS:
@@ -99,13 +96,12 @@ for lang in WIKI_LANGS:
       output_features=DEFAULT_OUTPUT_FEATURES,
       metric_fns=[])
 
-_wiki_ = ["wiki.{}".format(lang.replace("-", "_")) for lang in WIKI_LANGS]
-t5.data.MixtureRegistry.add(
-    "wiki", _wiki_, default_rate=DEFAULT_MIX_RATE)
+wiki = ["wiki.{}".format(lang.replace("-", "_")) for lang in WIKI_LANGS]
+t5.data.MixtureRegistry.add("wiki", wiki, default_rate=DEFAULT_MIX_RATE)
 
 # Mixture of mC4 and WIKI
 t5.data.MixtureRegistry.add(
-    "mc4_wiki", _mc4_ + _wiki_, default_rate=DEFAULT_MIX_RATE)
+    "mc4_wiki", mc4 + wiki, default_rate=DEFAULT_MIX_RATE)
 
 # =========================== Fine-tuning Tasks/Mixtures =======================
 # ----- XNLI -----
@@ -148,10 +144,9 @@ t5.data.TaskRegistry.add(
     ],
     output_features=DEFAULT_OUTPUT_FEATURES,
     metric_fns=[metrics.accuracy])
-_xnli_zeroshot = (["xnli_train", "xnli_dev_test.all_langs"] + \
+xnli_zeroshot = (["xnli_train", "xnli_dev_test.all_langs"] + \
                   ["xnli_dev_test.{}".format(lang) for lang in XNLI_LANGS])
-t5.data.MixtureRegistry.add(
-    "xnli_zeroshot", _xnli_zeroshot, default_rate=1.0)
+t5.data.MixtureRegistry.add("xnli_zeroshot", xnli_zeroshot, default_rate=1.0)
 
 # ----- PAWS -----
 label_names = ["different_meaning", "paraphrase"]
@@ -209,19 +204,17 @@ t5.data.TaskRegistry.add(
     metric_fns=[metrics.accuracy])
 
 # PAWSX Zero-Shot
-_pawsx = ["paws"] + ["pawsx_dev_test.all_langs"] + [
+pawsx = ["paws"] + ["pawsx_dev_test.all_langs"] + [
     "pawsx_dev_test.{}".format(lang) for lang in utils.PAWSX_LANGS
 ]
-t5.data.MixtureRegistry.add(
-    "pawsx_zeroshot", _pawsx, default_rate=1.0)
+t5.data.MixtureRegistry.add("pawsx_zeroshot", pawsx, default_rate=1.0)
 
-_pawsx_translate = [
+pawsx_translate = [
     "pawsx_translate.{}".format(lang) for lang in utils.PAWSX_LANGS
-] + ["pawsx_dev_test.all_langs"] + [
-    "pawsx_dev_test.{}".format(lang) for lang in utils.PAWSX_LANGS
-]
+] + ["pawsx_dev_test.all_langs"
+    ] + ["pawsx_dev_test.{}".format(lang) for lang in utils.PAWSX_LANGS]
 t5.data.MixtureRegistry.add(
-    "pawsx_translate", _pawsx_translate, default_rate=1.0)
+    "pawsx_translate", pawsx_translate, default_rate=1.0)
 
 # ----- TyDiQA GoldP-----
 # The "validation" split contains all the validation examples for all the
@@ -248,10 +241,9 @@ for lang in TYDIQA_LANGS:
       output_features=DEFAULT_OUTPUT_FEATURES,
       metric_fns=[metrics.squad])
 
-_tydiqa = (["tydiqa_train_dev"] + \
+tydiqa = (["tydiqa_train_dev"] + \
             ["tydiqa_dev.{}".format(lang) for lang in TYDIQA_LANGS])
-t5.data.MixtureRegistry.add(
-    "tydiqa", _tydiqa, default_rate=1.0)
+t5.data.MixtureRegistry.add("tydiqa", tydiqa, default_rate=1.0)
 
 
 # ----- English SQUAD -----
@@ -302,16 +294,17 @@ t5.data.TaskRegistry.add(
     metric_fns=[metrics.squad])
 
 # XQuAD Zero-Shot (SQuAD train, SQuAD dev, XQuAD test).
-_xquad_test = ["xquad_test.{}".format(lang) for lang in utils.XQUAD_LANGS_TEST]
-_xquad_zeroshot = ["squad_train_dev", "xquad_test.all_langs"] + _xquad_test
-t5.data.MixtureRegistry.add(
-    "xquad_zeroshot", _xquad_zeroshot, default_rate=1.0)
+xquad_test = ["xquad_test.{}".format(lang) for lang in utils.XQUAD_LANGS_TEST]
+xquad_zeroshot = ["squad_train_dev", "xquad_test.all_langs"] + xquad_test
+t5.data.MixtureRegistry.add("xquad_zeroshot", xquad_zeroshot, default_rate=1.0)
 
 # XQuAD Translate-Train (XQuAD translate-train, XQuAD translate-dev, XQuAD test)
-_xquad_translate_train_dev = ["xquad_translate_train_dev.{}".format(lang)
-                              for lang in utils.XQUAD_LANGS_TRAIN_DEV]
-_xquad_translate = (_xquad_translate_train_dev + \
-                    ["xquad_test.all_langs"] + _xquad_test)
+xquad_translate_train_dev = [
+    "xquad_translate_train_dev.{}".format(lang)
+    for lang in utils.XQUAD_LANGS_TRAIN_DEV
+]
+xquad_translate = (xquad_translate_train_dev + \
+                    ["xquad_test.all_langs"] + xquad_test)
 t5.data.MixtureRegistry.add(
-    "xquad_translate", _xquad_translate, default_rate=1.0)
+    "xquad_translate", xquad_translate, default_rate=1.0)
 
