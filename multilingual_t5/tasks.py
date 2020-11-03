@@ -308,3 +308,31 @@ xquad_translate = (xquad_translate_train_dev + \
 t5.data.MixtureRegistry.add(
     "xquad_translate", xquad_translate, default_rate=1.0)
 
+
+# ----- MLQA -----
+MLQA_LANGS = ["ar", "de", "en", "es", "hi", "vi", "zh"]
+
+for language in MLQA_LANGS:
+  t5.data.TaskRegistry.add(
+      "mlqa_dev_test.{}".format(language),
+      t5.data.TfdsTask,
+      tfds_name="mlqa/{}:1.0.0".format(language),
+      splits=["validation", "test"],
+      text_preprocessor=preprocessors.xquad,
+      postprocess_fn=t5.data.postprocessors.qa,
+      output_features=DEFAULT_OUTPUT_FEATURES,
+      metric_fns=[metrics.squad])
+
+# MLQA Zero-Shot
+mlqa_dev_test = [f"mlqa_dev_test.{language}" for language in MLQA_LANGS]
+mlqa_zeroshot = ["squad_train_dev"] + mlqa_dev_test
+t5.data.MixtureRegistry.add("mlqa_zeroshot", mlqa_zeroshot, default_rate=1.0)
+
+# MLQA Translate-Train
+mlqa_translate_train = [
+    "xquad_translate_train_dev.{}".format(lang) for lang in MLQA_LANGS
+] + mlqa_dev_test
+
+t5.data.MixtureRegistry.add(
+    "mlqa_translate_train", mlqa_translate_train, default_rate=1.0)
+
