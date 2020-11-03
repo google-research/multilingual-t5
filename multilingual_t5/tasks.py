@@ -71,7 +71,7 @@ for lang in MC4_LANGS:
       text_preprocessor=functools.partial(
           t5.data.preprocessors.rekey,
           key_map={"inputs": None, "targets": "text"}),
-      token_preprocessor=t5.data.preprocessors.unsupervised,
+      token_preprocessor=t5.data.preprocessors.span_corruption,
       output_features=DEFAULT_OUTPUT_FEATURES,
       metric_fns=[])
 
@@ -92,7 +92,7 @@ for lang in WIKI_LANGS:
                   "targets": "text"
               }),
       ],
-      token_preprocessor=t5.data.preprocessors.unsupervised,
+      token_preprocessor=t5.data.preprocessors.span_corruption,
       output_features=DEFAULT_OUTPUT_FEATURES,
       metric_fns=[])
 

@@ -89,16 +89,15 @@ t5_mesh_transformer \
   --tpu_zone="${ZONE}" \
   --model_dir="${MODEL_DIR}" \
   --gin_file="models/t5.1.1.large.gin" \
-  --gin_file="objectives/span.gin" \
   --gin_param="MIXTURE_NAME = '${TASK}'" \
-  --gin_param="inputs_length = 1024" \
+  --gin_param="utils.run.sequence_length = {'inputs': 1024, 'targets': 256}" \
   --gin_param="utils.run.batch_size = ('tokens_per_batch', 1048576)" \
   --gin_param="utils.run.learning_rate_schedule=@learning_rate_schedules.rsqrt_no_ramp_down" \
   --gin_param="run.train_steps = 1000000" \
   --gin_param="utils.tpu_mesh_shape.model_parallelism = 1" \
   --gin_param="utils.tpu_mesh_shape.tpu_topology = 'v3-256'" \
-  --eval_gin_file="perplexity_eval.gin" \
-  --gin_param="mesh_eval_dataset_fn.num_eval_examples = 10000" \
+  --eval_mode="perplexity_eval" \
+  --eval_gin_param="mesh_eval_dataset_fn.num_eval_examples = 10000" \
   --t5_tfds_data_dir="${BUCKET}/t5-tfds" \
   --module_import="multilingual_t5.tasks"
 ```
