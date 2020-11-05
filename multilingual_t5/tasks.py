@@ -298,11 +298,15 @@ xquad_test = ["xquad_test.{}".format(lang) for lang in utils.XQUAD_LANGS_TEST]
 xquad_zeroshot = ["squad_train_dev", "xquad_test.all_langs"] + xquad_test
 t5.data.MixtureRegistry.add("xquad_zeroshot", xquad_zeroshot, default_rate=1.0)
 
-# XQuAD Translate-Train (XQuAD translate-train, XQuAD translate-dev, XQuAD test)
+# XQuAD Translate-Train (English SQuAD, XQuAD translate-train,
+# XQuAD translate-dev, XQuAD test)
+# Note that the QA translate-train baselines from Hu et al (XTREME)
+# do not include the English data. However, Fang et al (FILTER) do include
+# English data.
 xquad_translate_train_dev = [
     "xquad_translate_train_dev.{}".format(lang)
     for lang in utils.XQUAD_LANGS_TRAIN_DEV
-]
+] + ["squad_train_dev"]
 xquad_translate = (xquad_translate_train_dev + \
                     ["xquad_test.all_langs"] + xquad_test)
 t5.data.MixtureRegistry.add(
