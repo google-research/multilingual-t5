@@ -83,7 +83,7 @@ ctpu up --name=$TPU --project=$PROJECT --zone=$ZONE --tpu-size=v3-256 --tpu-only
 TASK=mc4
 MODEL_DIR="${BUCKET}${TASK}"
 
-t5_mesh_transformer \
+python -m t5.models.mesh_transformer_main \
   --tpu="${TPU}" \
   --gcp_project="${PROJECT}" \
   --tpu_zone="${ZONE}" \
@@ -121,7 +121,7 @@ FINETUNE_STEPS=20000
 MODEL_DIR="${BUCKET}${TASK}"
 
 # Run fine-tuning
-t5_mesh_transformer \
+python -m t5.models.mesh_transformer_main \
   --tpu="${TPU}" \
   --gcp_project="${PROJECT}" \
   --tpu_zone="${ZONE}" \
