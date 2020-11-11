@@ -216,10 +216,14 @@ pawsx_translate = [
 t5.data.MixtureRegistry.add(
     "pawsx_translate", pawsx_translate, default_rate=1.0)
 
+
+
+
 # ----- TyDiQA GoldP-----
 # The "validation" split contains all the validation examples for all the
 # individual languages together.
 TYDIQA_LANGS = ["ar", "bn", "en", "fi", "id", "ko", "ru", "sw", "te"]
+
 t5.data.TaskRegistry.add(
     "tydiqa_train_dev",
     t5.data.TfdsTask,
@@ -245,6 +249,29 @@ tydiqa = (["tydiqa_train_dev"] + \
             ["tydiqa_dev.{}".format(lang) for lang in TYDIQA_LANGS])
 t5.data.MixtureRegistry.add("tydiqa", tydiqa, default_rate=1.0)
 
+
+# Defining translate-train tasks.
+for lang in TYDIQA_LANGS:
+  # Skipping English, since translate-train is not available.
+  if lang == "en":
+    continue
+  t5.data.dataset_providers.TaskRegistry.add(
+      "tydiqa_translate.{}".format(lang),
+      t5.data.dataset_providers.TfdsTask,
+      tfds_name="tydi_qa/goldp:2.0.0",
+      splits={"train": "translate-train-{}".format(lang)},
+      text_preprocessor=preprocessors.xquad,
+      postprocess_fn=t5.data.postprocessors.qa,
+      output_features=DEFAULT_OUTPUT_FEATURES,
+      metric_fns=[metrics.squad])
+
+_tydiqa_translate = (
+    ["tydiqa_en"]
+    + [f"tydiqa_translate.{lang}"
+       for lang in TYDIQA_LANGS if lang != "en"]
+    + [f"tydiqa_dev.{lang}" for lang in TYDIQA_LANGS])
+t5.data.dataset_providers.MixtureRegistry.add(
+    "tydiqa_translate", _tydiqa_translate, default_rate=1.0)
 
 # ----- English SQUAD -----
 t5.data.TaskRegistry.add(
