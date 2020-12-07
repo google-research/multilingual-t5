@@ -115,6 +115,7 @@ export TPU=yourtpu
 ctpu up --name=$TPU --project=$PROJECT --zone=$ZONE --tpu-size=v3-256 --tpu-only --noconf
 
 TASK=xnli_zeroshot
+SEQUENCE_LENGTH_GIN=xnli
 PRETRAINED_DIR=gs://t5-data/pretrained_models/mt5/large
 PRETRAINED_STEPS=1000000
 FINETUNE_STEPS=20000
@@ -127,7 +128,7 @@ python -m t5.models.mesh_transformer_main \
   --tpu_zone="${ZONE}" \
   --model_dir="${MODEL_DIR}" \
   --gin_file="${PRETRAINED_DIR}/operative_config.gin" \
-  --gin_file="sequence_lengths/xnli_zeroshot.gin" \
+  --gin_file="sequence_lengths/${SEQUENCE_LENGTH_GIN}.gin" \
   --gin_param="utils.tpu_mesh_shape.tpu_topology = 'v3-256'" \
   --gin_param="MIXTURE_NAME = '${TASK}'" \
   --gin_param="utils.run.train_steps=$((PRETRAINED_STEPS+FINETUNE_STEPS))" \
