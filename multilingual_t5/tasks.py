@@ -19,7 +19,6 @@ from multilingual_t5 import preprocessors
 from multilingual_t5 import utils
 
 import t5.data
-from t5.data import sentencepiece_vocabulary
 from t5.evaluation import metrics
 import tensorflow_datasets as tfds
 
@@ -30,8 +29,7 @@ DEFAULT_TEMPERATURE = 1.0 / 0.3
 DEFAULT_MIX_RATE = functools.partial(
     t5.data.utils.rate_num_examples, temperature=DEFAULT_TEMPERATURE)
 
-DEFAULT_VOCAB = sentencepiece_vocabulary.SentencePieceVocabulary(
-    DEFAULT_SPM_PATH)
+DEFAULT_VOCAB = t5.data.SentencePieceVocabulary(DEFAULT_SPM_PATH)
 DEFAULT_OUTPUT_FEATURES = {
     "inputs": t5.data.Feature(
         vocabulary=DEFAULT_VOCAB, add_eos=True, required=False),
