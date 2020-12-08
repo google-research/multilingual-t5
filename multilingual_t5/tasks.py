@@ -17,7 +17,7 @@ import functools
 
 from multilingual_t5 import preprocessors
 from multilingual_t5 import utils
-
+from multilingual_t5.evaluation import metrics as mt5_metrics
 import t5.data
 from t5.evaluation import metrics
 import tensorflow_datasets as tfds
@@ -352,20 +352,8 @@ xquad_translate_train = [
 t5.data.MixtureRegistry.add(
     "xquad_translate_train", xquad_translate_train, default_rate=1.0)
 
-# TODO(mihirkale): Add MLQA translate-train to TFDS.
 # ----- MLQA -----
-# Data downloaded from https://github.com/facebookresearch/MLQA.
-
 MLQA_LANGS = ["ar", "de", "en", "es", "hi", "vi", "zh"]
-text_preprocessor = [
-    functools.partial(
-        t5.data.preprocessors.preprocess_tsv,
-        num_fields=5,
-        inputs_format="question : {1} context : {2}",
-        targets_format="{3}")
-]
-
-
 for language in MLQA_LANGS:
   t5.data.TaskRegistry.add(
       "mlqa_dev_test.{}".format(language),
@@ -375,7 +363,7 @@ for language in MLQA_LANGS:
       text_preprocessor=preprocessors.xquad,
       postprocess_fn=t5.data.postprocessors.qa,
       output_features=DEFAULT_OUTPUT_FEATURES,
-      metric_fns=[metrics.squad])
+      metric_fns=[functools.partial(mt5_metrics.mlqa, lang=language)])
 
 # MLQA Zero-Shot
 mlqa_dev_test = [f"mlqa_dev_test.{language}" for language in MLQA_LANGS]
