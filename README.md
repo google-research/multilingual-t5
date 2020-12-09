@@ -146,7 +146,7 @@ We have released the following checkpoints for pre-trained models described in o
 
 * **mT5-Small** (300 million parameters): [gs://t5-data/pretrained_models/mt5/small](https://console.cloud.google.com/storage/browser/t5-data/pretrained_models/mt5/small/)
 * **mT5-Base** (600 million parameters): [gs://t5-data/pretrained_models/mt5/base](https://console.cloud.google.com/storage/browser/t5-data/pretrained_models/mt5/base/)
-* **mT5-Large** (1 billion parameters): [gs://t5-data/pretrained_models/mt5/large](https://console.cloud.google.com/storage/browser/t5-data/pretrained_models/mt5/large/)
+* **mT5-Large** (1.2 billion parameters): [gs://t5-data/pretrained_models/mt5/large](https://console.cloud.google.com/storage/browser/t5-data/pretrained_models/mt5/large/)
 * **mT5-XL** (4 billion parameters): [gs://t5-data/pretrained_models/mt5/xl](https://console.cloud.google.com/storage/browser/t5-data/pretrained_models/mt5/xl/)
 * **mT5-XXL** (13 billion parameters): [gs://t5-data/pretrained_models/mt5/xxl](https://console.cloud.google.com/storage/browser/t5-data/pretrained_models/mt5/xxl/)
 
