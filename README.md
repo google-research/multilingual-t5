@@ -66,7 +66,10 @@ fine-tuning, evaluation, and exporting models for inference can be found in the
 repo](https://github.com/google-research/text-to-text-transfer-transformer). In
 order to use the additional mT5 tasks provided in this library with the
 `t5_mesh_transformer` command, run from this directory and add the flag
-`--module_import="multilingual_t5.tasks"`.
+`--module_import="multilingual_t5.tasks"`. There is also support for [mT5 in
+HuggingFace](https://huggingface.co/transformers/model_doc/mt5.html); see
+instructions in the T5 repo
+[here](https://github.com/google-research/text-to-text-transfer-transformer#t5models).
 
 To train an `mT5-Large` model on the
 [mc4](https://www.tensorflow.org/datasets/catalog/c4#c4multilingual_nights_stay)
