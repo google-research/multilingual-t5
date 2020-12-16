@@ -17,7 +17,7 @@
 from absl.testing import absltest
 
 from multilingual_t5 import preprocessors
-from t5.data import test_utils
+import t5.data
 import tensorflow.compat.v2 as tf
 
 
@@ -35,7 +35,7 @@ class PreprocessorsTest(absltest.TestCase):
     })
 
     dataset = preprocessors.xquad(dataset)
-    test_utils.assert_dataset(
+    t5.data.assert_dataset(
         dataset, {
             'id': '123',
             'inputs': 'question: Whose portrait by François Clouet was' +
@@ -56,7 +56,7 @@ class PreprocessorsTest(absltest.TestCase):
         })
 
     dataset = preprocessors.process_mnli(dataset)
-    test_utils.assert_dataset(
+    t5.data.assert_dataset(
         dataset, {
             'inputs': 'xnli: premise: premise1 hypothesis: hypothesis1',
             'targets': '1'
@@ -77,7 +77,7 @@ class PreprocessorsTest(absltest.TestCase):
     })
 
     dataset = preprocessors.process_xnli(dataset, target_languages=['lang1'])
-    test_utils.assert_dataset(
+    t5.data.assert_dataset(
         dataset, {
             'inputs': 'xnli: premise: premise1 hypothesis: translation1',
             'targets': '1'
@@ -101,7 +101,7 @@ class PreprocessorsTest(absltest.TestCase):
                                          target_languages=['lang1',
                                                            'lang2',
                                                            'lang3'])
-    test_utils.assert_dataset(
+    t5.data.assert_dataset(
         dataset, [
             {'inputs': 'xnli: premise: premise1 hypothesis: translation1',
              'targets': '1'
