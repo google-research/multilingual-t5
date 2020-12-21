@@ -227,6 +227,7 @@ for lang in utils.PAWSX_LANGS:
 
 t5.data.TaskRegistry.add(
     "pawsx_dev_test.all_langs",
+    t5.data.Task,
     splits=["validation", "test"],
     dataset_fn=utils.pawsx_all_langs_dataset_fn,
     text_preprocessor=text_preprocessor,
