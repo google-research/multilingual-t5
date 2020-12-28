@@ -27,7 +27,7 @@ DEFAULT_SPM_PATH = "gs://t5-data/vocabs/mc4.250000.100extra/sentencepiece.model"
 
 DEFAULT_TEMPERATURE = 1.0 / 0.3
 DEFAULT_MIX_RATE = functools.partial(
-    t5.data.utils.rate_num_examples, temperature=DEFAULT_TEMPERATURE)
+    t5.data.rate_num_examples, temperature=DEFAULT_TEMPERATURE)
 
 DEFAULT_VOCAB = t5.data.SentencePieceVocabulary(DEFAULT_SPM_PATH)
 DEFAULT_OUTPUT_FEATURES = {
