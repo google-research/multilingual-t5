@@ -1,4 +1,4 @@
-# Copyright 2020 The mT5 Authors.
+# Copyright 2021 The mT5 Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -211,3 +211,14 @@ def process_xnli(dataset, target_languages):
   for lang_dataset in output[1:]:
     output_dataset = output_dataset.concatenate(lang_dataset)
   return output_dataset
+
+
+def filter_tydiqa_by_language(dataset, lang):
+  """Filters TyDi QA train dataset to keep examples of a single language."""
+
+  def function_matches_lang(x):
+    # TyDi QA ids start with the language.
+    # Example : finnish--7633091408814529542-0
+    return tf.strings.split(x['id'], sep='-')[0] == lang
+
+  return dataset.filter(function_matches_lang)

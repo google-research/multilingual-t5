@@ -1,4 +1,4 @@
-# Copyright 2020 The mT5 Authors.
+# Copyright 2021 The mT5 Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -288,6 +288,53 @@ tydiqa = (["tydiqa_train_dev"] + \
             ["tydiqa_dev.{}".format(lang) for lang in TYDIQA_LANGS])
 t5.data.MixtureRegistry.add("tydiqa", tydiqa, default_rate=1.0)
 
+# ----- TyDiQA GoldP Zero-Shot-----
+# This Zero-Shot setting matches the XTREME setup, where training is done on
+# the English data of TyDiQA. In the TyDiQA paper, fine-tuning was done on
+# SQuAD for zero-shot evaluation.
+TYDIQA_LANGS = ["ar", "bn", "en", "fi", "id", "ko", "ru", "sw", "te"]
+t5.data.TaskRegistry.add(
+    "tydiqa_train.en",
+    t5.data.TfdsTask,
+    tfds_name="tydi_qa/goldp:2.0.0",
+    splits=["train"],
+    text_preprocessor=[
+        preprocessors.xquad,
+        functools.partial(
+            preprocessors.filter_tydiqa_by_language, lang="english")
+    ],
+    postprocess_fn=t5.data.postprocessors.qa,
+    output_features=DEFAULT_OUTPUT_FEATURES,
+    metric_fns=[metrics.squad])
+
+tydiqa_zeroshot = (["tydiqa_train.en"] + \
+            ["tydiqa_dev.{}".format(lang) for lang in TYDIQA_LANGS])
+t5.data.MixtureRegistry.add(
+    "tydiqa_zeroshot", tydiqa_zeroshot, default_rate=1.0)
+
+
+# Defining translate-train tasks.
+for lang in TYDIQA_LANGS:
+  # Skipping English, since translate-train is not available.
+  if lang == "en":
+    continue
+  t5.data.TaskRegistry.add(
+      "tydiqa_translate_train.{}".format(lang),
+      t5.data.TfdsTask,
+      tfds_name="tydi_qa/goldp:2.0.0",
+      splits={"train": "translate-train-{}".format(lang)},
+      text_preprocessor=preprocessors.xquad,
+      postprocess_fn=t5.data.postprocessors.qa,
+      output_features=DEFAULT_OUTPUT_FEATURES,
+      metric_fns=[metrics.squad])
+
+tydiqa_translate_train = (
+    ["tydiqa_train.en"]
+    + [f"tydiqa_translate_train.{lang}"
+       for lang in TYDIQA_LANGS if lang != "en"]
+    + [f"tydiqa_dev.{lang}" for lang in TYDIQA_LANGS])
+t5.data.MixtureRegistry.add(
+    "tydiqa_translate_train", tydiqa_translate_train, default_rate=1.0)
 
 # ----- English SQUAD -----
 t5.data.TaskRegistry.add(
@@ -353,19 +400,10 @@ xquad_translate_train = [
 t5.data.MixtureRegistry.add(
     "xquad_translate_train", xquad_translate_train, default_rate=1.0)
 
-# TODO(mihirkale): Add MLQA translate-train to TFDS.
+
 # ----- MLQA -----
-# Data downloaded from https://github.com/facebookresearch/MLQA.
 
 MLQA_LANGS = ["ar", "de", "en", "es", "hi", "vi", "zh"]
-text_preprocessor = [
-    functools.partial(
-        t5.data.preprocessors.preprocess_tsv,
-        num_fields=5,
-        inputs_format="question : {1} context : {2}",
-        targets_format="{3}")
-]
-
 
 for language in MLQA_LANGS:
   t5.data.TaskRegistry.add(
