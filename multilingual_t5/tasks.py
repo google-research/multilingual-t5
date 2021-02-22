@@ -214,7 +214,7 @@ for lang in utils.PAWSX_LANGS:
       metric_fns=[metrics.accuracy])
 
   if lang != "en":
-  # This uses machine translations provided by the XTREME paper.
+    # This uses machine translations provided by the XTREME paper.
     t5.data.TaskRegistry.add(
         "pawsx_translate_train.{}".format(lang),
         t5.data.TfdsTask,
@@ -430,3 +430,42 @@ mlqa_translate_train = [
 
 t5.data.MixtureRegistry.add(
     "mlqa_translate_train", mlqa_translate_train, default_rate=1.0)
+
+
+# ----- GLUE -----
+# The glue tasks are already present in the task registry from importing the
+# t5.data.tasks file. However, that task and mixture use the t5 sentence piece
+# vocabulary. This task and mixture use the mt5 vocabulary.
+for b in tfds.text.glue.Glue.builder_configs.values():
+  t5.data.TaskRegistry.add(
+      "mt5_glue_%s_v002" % b.name,
+      t5.data.TfdsTask,
+      tfds_name="glue/%s:1.0.0" % b.name,
+      text_preprocessor=t5.data.glue_utils.get_glue_text_preprocessor(b),
+      metric_fns=t5.data.glue_utils.get_glue_metric(b.name),
+      output_features=DEFAULT_OUTPUT_FEATURES,
+      postprocess_fn=t5.data.glue_utils.get_glue_postprocess_fn(b),
+      splits=["test"] if b.name == "ax" else None,
+  )
+
+t5.data.MixtureRegistry.add(
+    "mt5_glue_v002_proportional",
+    list({
+        f"mt5_{k}": v
+        for k, v in t5.data.glue_utils.get_glue_weight_mapping().items()
+    }.items()))
+
+
+# ============== Summarization ==============
+# ----- CNN/DailyMail -----
+t5.data.TaskRegistry.add(
+    "mt5_cnn_dailymail_v002",
+    t5.data.TfdsTask,
+    tfds_name="cnn_dailymail:3.1.0",
+    text_preprocessor=functools.partial(
+        t5.data.preprocessors.summarize,
+        article_key="article",
+        summary_key="highlights"),
+    metric_fns=[metrics.rouge],
+    output_features=DEFAULT_OUTPUT_FEATURES)
+
