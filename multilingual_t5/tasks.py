@@ -266,7 +266,7 @@ TYDIQA_LANGS = ["ar", "bn", "en", "fi", "id", "ko", "ru", "sw", "te"]
 t5.data.TaskRegistry.add(
     "tydiqa_train_dev",
     t5.data.TfdsTask,
-    tfds_name="tydi_qa/goldp:2.0.0",
+    tfds_name="tydi_qa/goldp:2.1.0",
     splits=["train", "validation"],
     text_preprocessor=preprocessors.xquad,
     postprocess_fn=t5.data.postprocessors.qa,
@@ -277,7 +277,7 @@ for lang in TYDIQA_LANGS:
   t5.data.TaskRegistry.add(
       "tydiqa_dev.{}".format(lang),
       t5.data.TfdsTask,
-      tfds_name="tydi_qa/goldp:2.0.0",
+      tfds_name="tydi_qa/goldp:2.1.0",
       splits={"validation": "validation-{}".format(lang)},
       text_preprocessor=preprocessors.xquad,
       postprocess_fn=t5.data.postprocessors.qa,
@@ -296,7 +296,7 @@ TYDIQA_LANGS = ["ar", "bn", "en", "fi", "id", "ko", "ru", "sw", "te"]
 t5.data.TaskRegistry.add(
     "tydiqa_train.en",
     t5.data.TfdsTask,
-    tfds_name="tydi_qa/goldp:2.0.0",
+    tfds_name="tydi_qa/goldp:2.1.0",
     splits=["train"],
     text_preprocessor=[
         preprocessors.xquad,
@@ -321,7 +321,7 @@ for lang in TYDIQA_LANGS:
   t5.data.TaskRegistry.add(
       "tydiqa_translate_train.{}".format(lang),
       t5.data.TfdsTask,
-      tfds_name="tydi_qa/goldp:2.0.0",
+      tfds_name="tydi_qa/goldp:2.1.0",
       splits={"train": "translate-train-{}".format(lang)},
       text_preprocessor=preprocessors.xquad,
       postprocess_fn=t5.data.postprocessors.qa,
