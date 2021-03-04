@@ -79,7 +79,7 @@ t5.data.MixtureRegistry.add("mc4", mc4, default_rate=DEFAULT_MIX_RATE)
 # Wikipedia
 for lang in WIKI_LANGS:
   t5.data.TaskRegistry.add(
-      "wiki.{}".format(lang.replace("-", "_")),
+      "mt5_wiki.{}".format(lang.replace("-", "_")),
       t5.data.TfdsTask,
       tfds_name="wikipedia/20200301.{}:1.0.0".format(lang),
       text_preprocessor=[
@@ -94,8 +94,8 @@ for lang in WIKI_LANGS:
       output_features=DEFAULT_OUTPUT_FEATURES,
       metric_fns=[])
 
-wiki = ["wiki.{}".format(lang.replace("-", "_")) for lang in WIKI_LANGS]
-t5.data.MixtureRegistry.add("wiki", wiki, default_rate=DEFAULT_MIX_RATE)
+wiki = ["mt5_wiki.{}".format(lang.replace("-", "_")) for lang in WIKI_LANGS]
+t5.data.MixtureRegistry.add("mt5_wiki", wiki, default_rate=DEFAULT_MIX_RATE)
 
 # Mixture of mC4 and WIKI
 t5.data.MixtureRegistry.add(
@@ -112,7 +112,7 @@ XNLI_LANGS = [
 ]
 
 t5.data.TaskRegistry.add(
-    "xnli_train",
+    "mt5_xnli_train",
     t5.data.TfdsTask,
     tfds_name="multi_nli:1.1.0",
     splits=["train"],
@@ -121,7 +121,7 @@ t5.data.TaskRegistry.add(
     metric_fns=[metrics.accuracy])
 for lang in XNLI_LANGS:
   t5.data.TaskRegistry.add(
-      "xnli_dev_test.{}".format(lang),
+      "mt5_xnli_dev_test.{}".format(lang),
       t5.data.TfdsTask,
       tfds_name="xnli:1.1.0",
       splits=["validation", "test"],
@@ -134,7 +134,7 @@ for lang in XNLI_LANGS:
   if lang == "en":
     continue
   t5.data.TaskRegistry.add(
-      "xnli_translate_train.{}".format(lang),
+      "mt5_xnli_translate_train.{}".format(lang),
       t5.data.TfdsTask,
       tfds_name="xtreme_xnli:1.1.0",
       splits=["train"],
@@ -145,7 +145,7 @@ for lang in XNLI_LANGS:
       output_features=DEFAULT_OUTPUT_FEATURES,
       metric_fns=[metrics.accuracy])
 t5.data.TaskRegistry.add(
-    "xnli_dev_test.all_langs",
+    "mt5_xnli_dev_test.all_langs",
     t5.data.TfdsTask,
     tfds_name="xnli:1.1.0",
     splits=["validation", "test"],
@@ -155,16 +155,18 @@ t5.data.TaskRegistry.add(
     ],
     output_features=DEFAULT_OUTPUT_FEATURES,
     metric_fns=[metrics.accuracy])
-xnli_zeroshot = (["xnli_train", "xnli_dev_test.all_langs"] + \
-                  ["xnli_dev_test.{}".format(lang) for lang in XNLI_LANGS])
-t5.data.MixtureRegistry.add("xnli_zeroshot", xnli_zeroshot, default_rate=1.0)
+xnli_zeroshot = (["mt5_xnli_train", "mt5_xnli_dev_test.all_langs"] + \
+                  ["mt5_xnli_dev_test.{}".format(lang) for lang in XNLI_LANGS])
+t5.data.MixtureRegistry.add("mt5_xnli_zeroshot",
+                            xnli_zeroshot,
+                            default_rate=1.0)
 xnli_translate_train = xnli_zeroshot + [
-    "xnli_translate_train.{}".format(lang)
+    "mt5_xnli_translate_train.{}".format(lang)
     for lang in XNLI_LANGS
     if lang != "en"
 ]
 t5.data.MixtureRegistry.add(
-    "xnli_translate_train", xnli_translate_train, default_rate=1.0)
+    "mt5_xnli_translate_train", xnli_translate_train, default_rate=1.0)
 
 # ----- PAWS -----
 label_names = ["different_meaning", "paraphrase"]
@@ -182,7 +184,7 @@ postprocess_fn = functools.partial(
         label_classes=label_names)
 
 t5.data.TaskRegistry.add(
-    "paws",
+    "mt5_paws",
     t5.data.TfdsTask,
     tfds_name="paws_x_wiki/en:1.0.0",
     splits=["train"],
@@ -193,7 +195,7 @@ t5.data.TaskRegistry.add(
 
 for lang in utils.PAWSX_LANGS:
   t5.data.TaskRegistry.add(
-      "pawsx_dev_test.{}".format(lang),
+      "mt5_pawsx_dev_test.{}".format(lang),
       t5.data.TfdsTask,
       tfds_name="paws_x_wiki/{}:1.0.0".format(lang),
       splits=["validation", "test"],
@@ -204,7 +206,7 @@ for lang in utils.PAWSX_LANGS:
 
   # This uses machine translations provided by the PAWS-X paper.
   t5.data.TaskRegistry.add(
-      "pawsx_translate_train_original.{}".format(lang),
+      "mt5_pawsx_translate_train_original.{}".format(lang),
       t5.data.TfdsTask,
       tfds_name="paws_x_wiki/{}:1.0.0".format(lang),
       splits=["train"],
@@ -216,7 +218,7 @@ for lang in utils.PAWSX_LANGS:
   if lang != "en":
     # This uses machine translations provided by the XTREME paper.
     t5.data.TaskRegistry.add(
-        "pawsx_translate_train.{}".format(lang),
+        "mt5_pawsx_translate_train.{}".format(lang),
         t5.data.TfdsTask,
         tfds_name="xtreme_pawsx/{}:1.0.0".format(lang),
         splits=["train"],
@@ -226,7 +228,7 @@ for lang in utils.PAWSX_LANGS:
         metric_fns=[metrics.accuracy])
 
 t5.data.TaskRegistry.add(
-    "pawsx_dev_test.all_langs",
+    "mt5_pawsx_dev_test.all_langs",
     t5.data.Task,
     splits=["validation", "test"],
     dataset_fn=utils.pawsx_all_langs_dataset_fn,
@@ -237,25 +239,27 @@ t5.data.TaskRegistry.add(
 
 # PAWSX Zero-Shot
 pawsx_eval = [
-    "pawsx_dev_test.{}".format(lang) for lang in utils.PAWSX_LANGS
-] + ["pawsx_dev_test.all_langs"]
-pawsx = ["paws"] +  pawsx_eval
-t5.data.MixtureRegistry.add("pawsx_zeroshot", pawsx, default_rate=1.0)
+    "mt5_pawsx_dev_test.{}".format(lang) for lang in utils.PAWSX_LANGS
+] + ["mt5_pawsx_dev_test.all_langs"]
+pawsx = ["mt5_paws"] +  pawsx_eval
+t5.data.MixtureRegistry.add("mt5_pawsx_zeroshot", pawsx, default_rate=1.0)
 
-pawsx_translate_train = ["paws"] + [
-    "pawsx_translate_train.{}".format(lang)
+pawsx_translate_train = ["mt5_paws"] + [
+    "mt5_pawsx_translate_train.{}".format(lang)
     for lang in utils.PAWSX_LANGS
     if lang != "en"
 ] + pawsx_eval
 t5.data.MixtureRegistry.add(
-    "pawsx_translate_train", pawsx_translate_train, default_rate=1.0)
+    "mt5_pawsx_translate_train", pawsx_translate_train, default_rate=1.0)
 
 pawsx_translate_train_original = [
-    "pawsx_translate_train_original.{}".format(lang)
+    "mt5_pawsx_translate_train_original.{}".format(lang)
     for lang in utils.PAWSX_LANGS
 ] + pawsx_eval
 t5.data.MixtureRegistry.add(
-    "pawsx_translate_train_original", pawsx_translate_train, default_rate=1.0)
+    "mt5_pawsx_translate_train_original",
+    pawsx_translate_train,
+    default_rate=1.0)
 
 
 # ----- TyDiQA GoldP-----
@@ -264,7 +268,7 @@ t5.data.MixtureRegistry.add(
 TYDIQA_LANGS = ["ar", "bn", "en", "fi", "id", "ko", "ru", "sw", "te"]
 
 t5.data.TaskRegistry.add(
-    "tydiqa_train_dev",
+    "mt5_tydiqa_train_dev",
     t5.data.TfdsTask,
     tfds_name="tydi_qa/goldp:2.1.0",
     splits=["train", "validation"],
@@ -275,7 +279,7 @@ t5.data.TaskRegistry.add(
 
 for lang in TYDIQA_LANGS:
   t5.data.TaskRegistry.add(
-      "tydiqa_dev.{}".format(lang),
+      "mt5_tydiqa_dev.{}".format(lang),
       t5.data.TfdsTask,
       tfds_name="tydi_qa/goldp:2.1.0",
       splits={"validation": "validation-{}".format(lang)},
@@ -284,9 +288,9 @@ for lang in TYDIQA_LANGS:
       output_features=DEFAULT_OUTPUT_FEATURES,
       metric_fns=[metrics.squad])
 
-tydiqa = (["tydiqa_train_dev"] + \
-            ["tydiqa_dev.{}".format(lang) for lang in TYDIQA_LANGS])
-t5.data.MixtureRegistry.add("tydiqa", tydiqa, default_rate=1.0)
+tydiqa = (["mt5_tydiqa_train_dev"] + \
+            ["mt5_tydiqa_dev.{}".format(lang) for lang in TYDIQA_LANGS])
+t5.data.MixtureRegistry.add("mt5_tydiqa", tydiqa, default_rate=1.0)
 
 # ----- TyDiQA GoldP Zero-Shot-----
 # This Zero-Shot setting matches the XTREME setup, where training is done on
@@ -294,7 +298,7 @@ t5.data.MixtureRegistry.add("tydiqa", tydiqa, default_rate=1.0)
 # SQuAD for zero-shot evaluation.
 TYDIQA_LANGS = ["ar", "bn", "en", "fi", "id", "ko", "ru", "sw", "te"]
 t5.data.TaskRegistry.add(
-    "tydiqa_train.en",
+    "mt5_tydiqa_train.en",
     t5.data.TfdsTask,
     tfds_name="tydi_qa/goldp:2.1.0",
     splits=["train"],
@@ -307,10 +311,10 @@ t5.data.TaskRegistry.add(
     output_features=DEFAULT_OUTPUT_FEATURES,
     metric_fns=[metrics.squad])
 
-tydiqa_zeroshot = (["tydiqa_train.en"] + \
-            ["tydiqa_dev.{}".format(lang) for lang in TYDIQA_LANGS])
+tydiqa_zeroshot = (["mt5_tydiqa_train.en"] + \
+            ["mt5_tydiqa_dev.{}".format(lang) for lang in TYDIQA_LANGS])
 t5.data.MixtureRegistry.add(
-    "tydiqa_zeroshot", tydiqa_zeroshot, default_rate=1.0)
+    "mt5_tydiqa_zeroshot", tydiqa_zeroshot, default_rate=1.0)
 
 
 # Defining translate-train tasks.
@@ -319,7 +323,7 @@ for lang in TYDIQA_LANGS:
   if lang == "en":
     continue
   t5.data.TaskRegistry.add(
-      "tydiqa_translate_train.{}".format(lang),
+      "mt5_tydiqa_translate_train.{}".format(lang),
       t5.data.TfdsTask,
       tfds_name="tydi_qa/goldp:2.1.0",
       splits={"train": "translate-train-{}".format(lang)},
@@ -329,16 +333,16 @@ for lang in TYDIQA_LANGS:
       metric_fns=[metrics.squad])
 
 tydiqa_translate_train = (
-    ["tydiqa_train.en"]
-    + [f"tydiqa_translate_train.{lang}"
+    ["mt5_tydiqa_train.en"]
+    + [f"mt5_tydiqa_translate_train.{lang}"
        for lang in TYDIQA_LANGS if lang != "en"]
-    + [f"tydiqa_dev.{lang}" for lang in TYDIQA_LANGS])
+    + [f"mt5_tydiqa_dev.{lang}" for lang in TYDIQA_LANGS])
 t5.data.MixtureRegistry.add(
-    "tydiqa_translate_train", tydiqa_translate_train, default_rate=1.0)
+    "mt5_tydiqa_translate_train", tydiqa_translate_train, default_rate=1.0)
 
 # ----- English SQUAD -----
 t5.data.TaskRegistry.add(
-    "squad_train_dev",
+    "mt5_squad_train_dev",
     t5.data.TfdsTask,
     tfds_name="squad/v1.1:2.0.0",
     splits=["train", "validation"],
@@ -350,7 +354,7 @@ t5.data.TaskRegistry.add(
 # ----- XQuAD -----
 for lang in utils.XQUAD_LANGS_TRAIN_DEV:
   t5.data.TaskRegistry.add(
-      "xquad_translate_train_dev.{}".format(lang),
+      "mt5_xquad_translate_train_dev.{}".format(lang),
       t5.data.TfdsTask,
       tfds_name="xquad/{}:2.0.0".format(lang),
       splits={
@@ -364,7 +368,7 @@ for lang in utils.XQUAD_LANGS_TRAIN_DEV:
 
 for lang in utils.XQUAD_LANGS_TEST:
   t5.data.TaskRegistry.add(
-      "xquad_test.{}".format(lang),
+      "mt5_xquad_test.{}".format(lang),
       t5.data.TfdsTask,
       tfds_name="xquad/{}:2.0.0".format(lang),
       splits=["test"],
@@ -375,7 +379,7 @@ for lang in utils.XQUAD_LANGS_TEST:
 
 # Additional test task containing all the languages.
 t5.data.TaskRegistry.add(
-    "xquad_test.all_langs",
+    "mt5_xquad_test.all_langs",
     splits=["test"],
     dataset_fn=utils.xquad_all_langs_dataset_fn,
     text_preprocessor=preprocessors.xquad,
@@ -384,9 +388,13 @@ t5.data.TaskRegistry.add(
     metric_fns=[metrics.squad])
 
 # XQuAD Zero-Shot (SQuAD train, SQuAD dev, XQuAD test).
-xquad_test = ["xquad_test.{}".format(lang) for lang in utils.XQUAD_LANGS_TEST]
-xquad_zeroshot = ["squad_train_dev", "xquad_test.all_langs"] + xquad_test
-t5.data.MixtureRegistry.add("xquad_zeroshot", xquad_zeroshot, default_rate=1.0)
+xquad_test = \
+    ["mt5_xquad_test.{}".format(lang) for lang in utils.XQUAD_LANGS_TEST]
+xquad_zeroshot = \
+    ["mt5_squad_train_dev", "mt5_xquad_test.all_langs"] + xquad_test
+t5.data.MixtureRegistry.add("mt5_xquad_zeroshot",
+                            xquad_zeroshot,
+                            default_rate=1.0)
 
 # XQuAD Translate-Train (English SQuAD, XQuAD translate-train,
 # XQuAD translate-dev, XQuAD test)
@@ -394,11 +402,11 @@ t5.data.MixtureRegistry.add("xquad_zeroshot", xquad_zeroshot, default_rate=1.0)
 # do not include the English data. However, Fang et al (FILTER) do include
 # English data.
 xquad_translate_train = [
-    "xquad_translate_train_dev.{}".format(lang)
+    "mt5_xquad_translate_train_dev.{}".format(lang)
     for lang in utils.XQUAD_LANGS_TRAIN_DEV
-] + ["squad_train_dev"] +  ["xquad_test.all_langs"] + xquad_test
+] + ["mt5_squad_train_dev"] +  ["mt5_xquad_test.all_langs"] + xquad_test
 t5.data.MixtureRegistry.add(
-    "xquad_translate_train", xquad_translate_train, default_rate=1.0)
+    "mt5_xquad_translate_train", xquad_translate_train, default_rate=1.0)
 
 
 # ----- MLQA -----
@@ -407,7 +415,7 @@ MLQA_LANGS = ["ar", "de", "en", "es", "hi", "vi", "zh"]
 
 for language in MLQA_LANGS:
   t5.data.TaskRegistry.add(
-      "mlqa_dev_test.{}".format(language),
+      "mt5_mlqa_dev_test.{}".format(language),
       t5.data.TfdsTask,
       tfds_name="mlqa/{}:1.0.0".format(language),
       splits=["validation", "test"],
@@ -417,19 +425,21 @@ for language in MLQA_LANGS:
       metric_fns=[metrics.squad])
 
 # MLQA Zero-Shot
-mlqa_dev_test = [f"mlqa_dev_test.{language}" for language in MLQA_LANGS]
-mlqa_zeroshot = ["squad_train_dev"] + mlqa_dev_test
-t5.data.MixtureRegistry.add("mlqa_zeroshot", mlqa_zeroshot, default_rate=1.0)
+mlqa_dev_test = [f"mt5_mlqa_dev_test.{language}" for language in MLQA_LANGS]
+mlqa_zeroshot = ["mt5_squad_train_dev"] + mlqa_dev_test
+t5.data.MixtureRegistry.add("mt5_mlqa_zeroshot",
+                            mlqa_zeroshot,
+                            default_rate=1.0)
 
 # MLQA Translate-Train
 mlqa_translate_train = [
-    "xquad_translate_train_dev.{}".format(lang)
+    "mt5_xquad_translate_train_dev.{}".format(lang)
     for lang in MLQA_LANGS
     if lang != "en"
-] + ["squad_train_dev"] + mlqa_dev_test
+] + ["mt5_squad_train_dev"] + mlqa_dev_test
 
 t5.data.MixtureRegistry.add(
-    "mlqa_translate_train", mlqa_translate_train, default_rate=1.0)
+    "mt5_mlqa_translate_train", mlqa_translate_train, default_rate=1.0)
 
 
 # ----- GLUE -----
