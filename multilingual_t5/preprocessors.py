@@ -47,7 +47,7 @@ def _pad_punctuation(text):
   return text
 
 
-def _xnli_map_hypothesis_premise(dataset, target_language):
+def xnli_map_hypothesis_premise(dataset, target_language):
   """Generates XNLI dataset with the hypothesis restricted to a target language.
 
   The XNLI dataset (https://www.tensorflow.org/datasets/catalog/xnli) contains
@@ -203,7 +203,7 @@ def process_xnli(dataset, target_languages):
 
   output = []
   for language in target_languages:
-    examples = _xnli_map_hypothesis_premise(dataset, target_language=language)
+    examples = xnli_map_hypothesis_premise(dataset, target_language=language)
     d = examples.map(_process, num_parallel_calls=tf.data.experimental.AUTOTUNE)
     output.append(d)
 
