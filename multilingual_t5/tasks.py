@@ -19,6 +19,7 @@ from multilingual_t5 import preprocessors
 from multilingual_t5 import utils
 
 import t5.data
+import t5.data.tasks
 from t5.evaluation import metrics
 import tensorflow_datasets as tfds
 
