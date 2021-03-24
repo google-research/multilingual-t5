@@ -443,6 +443,48 @@ t5.data.MixtureRegistry.add(
     "mt5_mlqa_translate_train", mlqa_translate_train, default_rate=1.0)
 
 
+# ----- WikiAnn NER -----
+
+NER_LANGS = [
+    "af", "ar", "bg", "bn", "de", "el", "en", "es", "et", "eu", "fa", "fi",
+    "fr", "he", "hi", "hu", "id", "it", "ja", "jv", "ka", "kk", "ko", "ml",
+    "mr", "ms", "my", "nl", "pt", "ru", "sw", "ta", "te", "th", "tl", "tr",
+    "ur", "vi", "yo", "zh"
+]
+
+for language in NER_LANGS:
+  t5.data.TaskRegistry.add(
+      "ner_train.{}".format(language),
+      t5.data.TfdsTask,
+      tfds_name="wikiann/{}:1.0.0".format(lang),
+      splits=["train"],
+      text_preprocessor=preprocessors.wikiann,
+      output_features=DEFAULT_OUTPUT_FEATURES,
+      metric_fns=[metrics.accuracy])
+
+  t5.data.TaskRegistry.add(
+      "ner_eval.{}".format(language),
+      t5.data.TfdsTask,
+      tfds_name="wikiann/{}:1.0.0".format(lang),
+      splits=["validation", "test"],
+      text_preprocessor=preprocessors.wikiann,
+      output_features=DEFAULT_OUTPUT_FEATURES,
+      metric_fns=[metrics.accuracy])
+
+# PANX zero-shot
+t5.data.MixtureRegistry.add(
+    "ner_zeroshot", ["ner_train.{}".format("en")] +
+    ["ner_eval.{}".format(language) for language in NER_LANGS],
+    default_rate=1.0)
+
+# PANX multilingual
+t5.data.MixtureRegistry.add(
+    "ner_multilingual",
+    ["ner_train.{}".format(language) for language in NER_LANGS] +
+    ["ner_eval.{}".format(language) for language in NER_LANGS],
+    default_rate=1.0)
+
+
 # ----- GLUE -----
 # The glue tasks are already present in the task registry from importing the
 # t5.data.tasks file. However, that task and mixture use the t5 sentence piece

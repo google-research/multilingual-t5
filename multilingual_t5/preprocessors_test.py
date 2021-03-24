@@ -48,6 +48,25 @@ class PreprocessorsTest(absltest.TestCase):
             'answers': ['The answer . ', 'Another answer . '],
         })
 
+  def test_process_wikiann(self):
+    dataset = tf.data.Dataset.from_tensors({
+        'tokens': ['rick', 'and', 'morty', 'are', 'cool', '.'],
+        'tags': ['B-PER', 'O', 'B-PER', 'O', 'O', 'O'],
+        'langs': ['en', 'en', 'en', 'en', 'en', 'en'],
+        'spans': ['PER: rick', 'PER: morty']
+    })
+
+    dataset = preprocessors.wikiann(dataset)
+    t5.data.assert_dataset(
+        dataset, {
+            'inputs': 'tag: rick and morty are cool .',
+            'targets': 'PER: rick $$ PER: morty',
+            'tokens': ['rick', 'and', 'morty', 'are', 'cool', '.'],
+            'tags': ['B-PER', 'O', 'B-PER', 'O', 'O', 'O'],
+            'langs': ['en', 'en', 'en', 'en', 'en', 'en'],
+            'spans': ['PER: rick', 'PER: morty']
+        })
+
   def test_process_mnli(self):
     dataset = tf.data.Dataset.from_tensors({
         'hypothesis': 'hypothesis1',

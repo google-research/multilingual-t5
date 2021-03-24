@@ -95,6 +95,53 @@ def xnli_map_hypothesis_premise(dataset, target_language):
   return dataset
 
 
+def wikiann(dataset):
+  """Convert WikiAnn NER dataset into a text2text format.
+
+  Wikiann produces examples with IOB2 tagging form:
+  {
+    'tokens': ["rick", "and", "morty", "are", "cool", "."],
+    'tags': ["B-PER", "O" , "B-PER", "O", "O", "O"],
+    'langs': ["en", "en", "en", "en", "en", "en"],
+    'spans': ["PER: rick", "PER: morty"]
+  }
+
+  This function will return examples of the format:
+  {
+    'inputs': 'tag: rick and morty are cool .',
+    'targets': 'PER: rick $$ PER: morty',
+    'tokens': ["rick", "and", "morty", "are", "cool", "."],
+    'tags': ["B-PER", "O" , "B-PER", "O", "O", "O"],
+    'langs': ["en", "en", "en", "en", "en", "en"]
+  }
+  
+  Args:
+    dataset: tf.data.Dataset to process.
+
+  Returns:
+    A preprocessed tf.data.Dataset with the format listed above.
+  """
+
+  # "$$" is a delimiter used to separate the tags. It was used because it
+  # doesn't occur in the dataset otherwise and hence doesn't interfere with
+  # eval.
+  def _process(x, delimiter=' $$ '):
+    """Create WikiAnn text2text example."""
+    inputs = 'tag: ' + tf.strings.reduce_join(x['tokens'], separator=' ')
+    targets = tf.strings.reduce_join(x['spans'], separator=delimiter)
+
+    return {
+        'inputs': inputs,
+        'targets': targets,
+        'tokens': x['tokens'],
+        'tags': x['tags'],
+        'langs': x['langs'],
+        'spans': x['spans']
+    }
+
+  return dataset.map(_process, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+
+
 def xquad(dataset, include_context=True):
   """Convert SQuAD-like examples to a text2text pair.
 
