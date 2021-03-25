@@ -454,7 +454,7 @@ NER_LANGS = [
 
 for language in NER_LANGS:
   t5.data.TaskRegistry.add(
-      "ner_train.{}".format(language),
+      "mt5_ner_train.{}".format(language),
       t5.data.TfdsTask,
       tfds_name="wikiann/{}:1.0.0".format(lang),
       splits=["train"],
@@ -463,7 +463,7 @@ for language in NER_LANGS:
       metric_fns=[metrics.accuracy])
 
   t5.data.TaskRegistry.add(
-      "ner_eval.{}".format(language),
+      "mt5_ner_eval.{}".format(language),
       t5.data.TfdsTask,
       tfds_name="wikiann/{}:1.0.0".format(lang),
       splits=["validation", "test"],
@@ -473,15 +473,15 @@ for language in NER_LANGS:
 
 # PANX zero-shot
 t5.data.MixtureRegistry.add(
-    "ner_zeroshot", ["ner_train.{}".format("en")] +
-    ["ner_eval.{}".format(language) for language in NER_LANGS],
+    "mt5_ner_zeroshot", ["mt5_ner_train.{}".format("en")] +
+    ["mt5_ner_eval.{}".format(language) for language in NER_LANGS],
     default_rate=1.0)
 
 # PANX multilingual
 t5.data.MixtureRegistry.add(
-    "ner_multilingual",
-    ["ner_train.{}".format(language) for language in NER_LANGS] +
-    ["ner_eval.{}".format(language) for language in NER_LANGS],
+    "mt5_ner_multilingual",
+    ["mt5_ner_train.{}".format(language) for language in NER_LANGS] +
+    ["mt5_ner_eval.{}".format(language) for language in NER_LANGS],
     default_rate=1.0)
 
 
