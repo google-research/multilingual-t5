@@ -1,0 +1,2 @@
+utils.run.sequence_length = {'inputs': 512, 'targets': 128}
+Bitransformer.decode.max_decode_length = 128
