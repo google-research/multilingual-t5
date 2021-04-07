@@ -107,7 +107,9 @@ python -m t5.models.mesh_transformer_main \
 
 ### Fine-Tuning
 
-As an example, to finetune the `mT5-Large` model on the `XNLI_zeroshot` task:
+The example below shows how to finetune the `mT5-Large` model on the XNLI
+zeroshot task. See `finetune_mt5_tasks.sh` for hyperparameter settings for
+other tasks.
 
 ```
 export PROJECT=yourproject
@@ -117,7 +119,7 @@ export TPU=yourtpu
 
 ctpu up --name=$TPU --project=$PROJECT --zone=$ZONE --tpu-size=v3-256 --tpu-only --noconf
 
-TASK=xnli_zeroshot
+TASK=mt5_xnli_zeroshot
 SEQUENCE_LENGTH_GIN=xnli
 PRETRAINED_DIR=gs://t5-data/pretrained_models/mt5/large
 PRETRAINED_STEPS=1000000
@@ -138,6 +140,7 @@ python -m t5.models.mesh_transformer_main \
   --gin_param="utils.run.init_checkpoint='${PRETRAINED_DIR}/model.ckpt-${PRETRAINED_STEPS}'" \
   --t5_tfds_data_dir="${BUCKET}/t5-tfds" \
   --module_import="multilingual_t5.tasks" \
+  --gin_param="utils.run.batch_size = ('tokens_per_batch', 1048576)" \
   --gin_location_prefix="multilingual_t5/gin/"
 ```
 
