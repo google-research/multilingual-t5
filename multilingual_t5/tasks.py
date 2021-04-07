@@ -345,7 +345,7 @@ t5.data.MixtureRegistry.add(
 t5.data.TaskRegistry.add(
     "mt5_squad_train_dev",
     t5.data.TfdsTask,
-    tfds_name="squad/v1.1:2.0.0",
+    tfds_name="squad/v1.1:3.0.0",
     splits=["train", "validation"],
     text_preprocessor=preprocessors.xquad,
     postprocess_fn=t5.data.postprocessors.qa,
@@ -357,7 +357,7 @@ for lang in utils.XQUAD_LANGS_TRAIN_DEV:
   t5.data.TaskRegistry.add(
       "mt5_xquad_translate_train_dev.{}".format(lang),
       t5.data.TfdsTask,
-      tfds_name="xquad/{}:2.0.0".format(lang),
+      tfds_name="xquad/{}:3.0.0".format(lang),
       splits={
           "train": "translate-train",
           "validation": "translate-dev"
@@ -371,7 +371,7 @@ for lang in utils.XQUAD_LANGS_TEST:
   t5.data.TaskRegistry.add(
       "mt5_xquad_test.{}".format(lang),
       t5.data.TfdsTask,
-      tfds_name="xquad/{}:2.0.0".format(lang),
+      tfds_name="xquad/{}:3.0.0".format(lang),
       splits=["test"],
       text_preprocessor=preprocessors.xquad,
       postprocess_fn=t5.data.postprocessors.qa,
