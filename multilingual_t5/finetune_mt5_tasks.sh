@@ -8,12 +8,11 @@ export TPU=yourtpu
 
 ctpu up --name=$TPU --project=$PROJECT --zone=$ZONE --tpu-size=v3-256 --tpu-only --noconf
 
+TASK=mt5_xnli_zeroshot
+
 PRETRAINED_DIR=gs://t5-data/pretrained_models/mt5/large
 PRETRAINED_STEPS=1000000
 MODEL_DIR="${BUCKET}${TASK}"
-
-
-TASK=mt5_xnli_zeroshot
 
 # Default MAX_DECODE_LENGTH
 # Note: Set it to a larger value when task targets have more than 128 tokens.
