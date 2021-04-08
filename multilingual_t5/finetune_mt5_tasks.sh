@@ -54,7 +54,7 @@ fi
 if [[ "$TASK" == *"ner"* ]]; then
   BATCH_SIZE=65536
   SEQUENCE_LENGTH_GIN="ner"
-  MAX_DECODE_LENGTH=1024
+  MAX_DECODE_LENGTH=512
   FINTUNE_STEPS=12000
   fi
 # ==== Run fine-tuning ====

@@ -17,6 +17,7 @@ import functools
 
 from multilingual_t5 import preprocessors
 from multilingual_t5 import utils
+from multilingual_t5.evaluation import metrics as mt5_metrics
 
 import t5.data
 import t5.data.tasks
@@ -156,8 +157,8 @@ t5.data.TaskRegistry.add(
     ],
     output_features=DEFAULT_OUTPUT_FEATURES,
     metric_fns=[metrics.accuracy])
-xnli_zeroshot = (["mt5_xnli_train", "mt5_xnli_dev_test.all_langs"] + \
-                  ["mt5_xnli_dev_test.{}".format(lang) for lang in XNLI_LANGS])
+xnli_zeroshot = (["mt5_xnli_train", "mt5_xnli_dev_test.all_langs"] +
+                 ["mt5_xnli_dev_test.{}".format(lang) for lang in XNLI_LANGS])
 t5.data.MixtureRegistry.add("mt5_xnli_zeroshot",
                             xnli_zeroshot,
                             default_rate=1.0)
@@ -289,8 +290,8 @@ for lang in TYDIQA_LANGS:
       output_features=DEFAULT_OUTPUT_FEATURES,
       metric_fns=[metrics.squad])
 
-tydiqa = (["mt5_tydiqa_train_dev"] + \
-            ["mt5_tydiqa_dev.{}".format(lang) for lang in TYDIQA_LANGS])
+tydiqa = (["mt5_tydiqa_train_dev"] +
+          ["mt5_tydiqa_dev.{}".format(lang) for lang in TYDIQA_LANGS])
 t5.data.MixtureRegistry.add("mt5_tydiqa", tydiqa, default_rate=1.0)
 
 # ----- TyDiQA GoldP Zero-Shot-----
@@ -312,8 +313,8 @@ t5.data.TaskRegistry.add(
     output_features=DEFAULT_OUTPUT_FEATURES,
     metric_fns=[metrics.squad])
 
-tydiqa_zeroshot = (["mt5_tydiqa_train.en"] + \
-            ["mt5_tydiqa_dev.{}".format(lang) for lang in TYDIQA_LANGS])
+tydiqa_zeroshot = (["mt5_tydiqa_train.en"] +
+                   ["mt5_tydiqa_dev.{}".format(lang) for lang in TYDIQA_LANGS])
 t5.data.MixtureRegistry.add(
     "mt5_tydiqa_zeroshot", tydiqa_zeroshot, default_rate=1.0)
 
@@ -389,10 +390,10 @@ t5.data.TaskRegistry.add(
     metric_fns=[metrics.squad])
 
 # XQuAD Zero-Shot (SQuAD train, SQuAD dev, XQuAD test).
-xquad_test = \
-    ["mt5_xquad_test.{}".format(lang) for lang in utils.XQUAD_LANGS_TEST]
-xquad_zeroshot = \
-    ["mt5_squad_train_dev", "mt5_xquad_test.all_langs"] + xquad_test
+xquad_test = (["mt5_xquad_test.{}".format(lang)
+               for lang in utils.XQUAD_LANGS_TEST])
+xquad_zeroshot = (["mt5_squad_train_dev", "mt5_xquad_test.all_langs"] +
+                  xquad_test)
 t5.data.MixtureRegistry.add("mt5_xquad_zeroshot",
                             xquad_zeroshot,
                             default_rate=1.0)
@@ -414,11 +415,11 @@ t5.data.MixtureRegistry.add(
 
 MLQA_LANGS = ["ar", "de", "en", "es", "hi", "vi", "zh"]
 
-for language in MLQA_LANGS:
+for lang in MLQA_LANGS:
   t5.data.TaskRegistry.add(
-      "mt5_mlqa_dev_test.{}".format(language),
+      "mt5_mlqa_dev_test.{}".format(lang),
       t5.data.TfdsTask,
-      tfds_name="mlqa/{}:1.0.0".format(language),
+      tfds_name="mlqa/{}:1.0.0".format(lang),
       splits=["validation", "test"],
       text_preprocessor=preprocessors.xquad,
       postprocess_fn=t5.data.postprocessors.qa,
@@ -426,7 +427,7 @@ for language in MLQA_LANGS:
       metric_fns=[metrics.squad])
 
 # MLQA Zero-Shot
-mlqa_dev_test = [f"mt5_mlqa_dev_test.{language}" for language in MLQA_LANGS]
+mlqa_dev_test = [f"mt5_mlqa_dev_test.{lang}" for lang in MLQA_LANGS]
 mlqa_zeroshot = ["mt5_squad_train_dev"] + mlqa_dev_test
 t5.data.MixtureRegistry.add("mt5_mlqa_zeroshot",
                             mlqa_zeroshot,
@@ -452,36 +453,36 @@ NER_LANGS = [
     "ur", "vi", "yo", "zh"
 ]
 
-for language in NER_LANGS:
+for lang in NER_LANGS:
   t5.data.TaskRegistry.add(
-      "mt5_ner_train.{}".format(language),
+      "mt5_ner_train.{}".format(lang),
       t5.data.TfdsTask,
       tfds_name="wikiann/{}:1.0.0".format(lang),
       splits=["train"],
       text_preprocessor=preprocessors.wikiann,
       output_features=DEFAULT_OUTPUT_FEATURES,
-      metric_fns=[metrics.accuracy])
+      metric_fns=[mt5_metrics.span_f1])
 
   t5.data.TaskRegistry.add(
-      "mt5_ner_eval.{}".format(language),
+      "mt5_ner_eval.{}".format(lang),
       t5.data.TfdsTask,
       tfds_name="wikiann/{}:1.0.0".format(lang),
       splits=["validation", "test"],
       text_preprocessor=preprocessors.wikiann,
       output_features=DEFAULT_OUTPUT_FEATURES,
-      metric_fns=[metrics.accuracy])
+      metric_fns=[mt5_metrics.span_f1])
 
-# PANX zero-shot
+# NER zero-shot
 t5.data.MixtureRegistry.add(
     "mt5_ner_zeroshot", ["mt5_ner_train.{}".format("en")] +
-    ["mt5_ner_eval.{}".format(language) for language in NER_LANGS],
+    ["mt5_ner_eval.{}".format(lang) for lang in NER_LANGS],
     default_rate=1.0)
 
-# PANX multilingual
+# NER multilingual
 t5.data.MixtureRegistry.add(
     "mt5_ner_multilingual",
-    ["mt5_ner_train.{}".format(language) for language in NER_LANGS] +
-    ["mt5_ner_eval.{}".format(language) for language in NER_LANGS],
+    ["mt5_ner_train.{}".format(lang) for lang in NER_LANGS] +
+    ["mt5_ner_eval.{}".format(lang) for lang in NER_LANGS],
     default_rate=1.0)
 
 
