@@ -52,11 +52,14 @@ if [[ "$TASK" == *"mlqa"* ]]; then
 fi
 
 if [[ "$TASK" == *"ner"* ]]; then
-  BATCH_SIZE=65536
   SEQUENCE_LENGTH_GIN="ner"
-  MAX_DECODE_LENGTH=512
-  FINTUNE_STEPS=12000
+  MAX_DECODE_LENGTH=128
+  if [[ "$TASK" == *"zeroshot"* ]]; then
+    BATCH_SIZE=65536
+  else
+    BATCH_SIZE=131072
   fi
+fi
 # ==== Run fine-tuning ====
 python -m t5.models.mesh_transformer_main \
   --tpu="${TPU}" \
