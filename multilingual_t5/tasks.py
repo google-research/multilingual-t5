@@ -19,7 +19,6 @@ from multilingual_t5 import preprocessors
 from multilingual_t5 import utils
 from multilingual_t5.evaluation import metrics as mt5_metrics
 
-import numpy as np
 import seqio
 import t5.data
 import t5.data.tasks
@@ -61,13 +60,6 @@ WIKI_LANGS = [
 ]
 
 # =========================== Pretraining Tasks/Mixtures =======================
-mc4_metric_fns = {}
-mc4_postprocess_fn = None
-for lang in MC4_LANGS:
-  mc4_metric_fns[lang] = []
-
-
-
 # mC4
 for lang in MC4_LANGS:
   seqio.TaskRegistry.add(
@@ -91,8 +83,7 @@ for lang in MC4_LANGS:
           seqio.preprocessors.append_eos_after_trim,
       ],
       output_features=DEFAULT_OUTPUT_FEATURES,
-      postprocess_fn=mc4_postprocess_fn,
-      metric_fns=mc4_metric_fns[lang])
+      metric_fns=[])
 
 mc4 = ["mc4.{}".format(lang.replace("-", "_")) for lang in MC4_LANGS]
 seqio.MixtureRegistry.add("mc4", mc4, default_rate=DEFAULT_MIX_RATE)
