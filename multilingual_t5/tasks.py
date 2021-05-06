@@ -501,7 +501,7 @@ for lang in MLQA_LANGS:
       ],
       postprocess_fn=t5.data.postprocessors.qa,
       output_features=DEFAULT_OUTPUT_FEATURES,
-      metric_fns=[metrics.squad])
+      metric_fns=[functools.partial(mt5_metrics.mlqa, lang=lang)])
 
 # MLQA Zero-Shot
 mlqa_dev_test = [f"mt5_mlqa_dev_test.{lang}" for lang in MLQA_LANGS]

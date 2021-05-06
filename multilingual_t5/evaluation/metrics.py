@@ -102,7 +102,7 @@ def normalize_mlqa(s, lang):
   return s
 
 
-def mlqa(targets, predictions, lang):
+def mlqa(targets, predictions, lang=None):
   """Computes MLQA metrics, maximizing over answers per question.
 
   Args:
@@ -113,6 +113,7 @@ def mlqa(targets, predictions, lang):
   Returns:
     dict with score_key: squad score across all targets and predictions
   """
+  assert lang is not None
   targets = [[normalize_mlqa(t, lang) for t in u] for u in targets]
   predictions = [normalize_mlqa(p, lang) for p in predictions]
   return qa_utils.qa_metrics(targets, predictions)
