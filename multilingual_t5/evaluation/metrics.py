@@ -27,23 +27,19 @@ import unicodedata
 from t5.evaluation import qa_utils
 
 
-def normalize_mlqa(s, lang):
+def normalize_mlqa(s, lang, punct):
   """Lower text and remove punctuation, articles and extra whitespace.
 
   Based on third_party/py/xtreme/third_party/evaluate_mlqa.py
   Args:
     s: string, typically the answer span predicted by a QA model.
     lang: ISO code of language.
+    punct: set of punctuation characters.
 
   Returns:
     string, after applying normalization rules.
   """
 
-  punct = {
-      chr(i)
-      for i in range(sys.maxunicode)
-      if unicodedata.category(chr(i)).startswith('P')
-  }.union(string.punctuation)
   whitespace_langs = ['en', 'es', 'hi', 'vi', 'de', 'ar']
   mixed_segmentation_langs = ['zh']
 
@@ -114,8 +110,13 @@ def mlqa(targets, predictions, lang=None):
     dict with score_key: squad score across all targets and predictions
   """
   assert lang is not None
-  targets = [[normalize_mlqa(t, lang) for t in u] for u in targets]
-  predictions = [normalize_mlqa(p, lang) for p in predictions]
+  punct = {
+      chr(i)
+      for i in range(sys.maxunicode)
+      if unicodedata.category(chr(i)).startswith('P')
+  }.union(string.punctuation)
+  targets = [[normalize_mlqa(t, lang, punct) for t in u] for u in targets]
+  predictions = [normalize_mlqa(p, lang, punct) for p in predictions]
   return qa_utils.qa_metrics(targets, predictions)
 
 
