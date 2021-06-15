@@ -615,3 +615,110 @@ seqio.TaskRegistry.add(
     metric_fns=[metrics.rouge],
     output_features=DEFAULT_OUTPUT_FEATURES)
 
+# ----- GEM-XSum -----
+_rouge_fn = functools.partial(
+    metrics.rouge,
+    score_keys=["rouge1", "rouge2", "rougeL", "rougeLsum"])
+
+seqio.TaskRegistry.add(
+    "mt5_gem_xsum",
+    source=seqio.TfdsDataSource(tfds_name="gem/xsum:1.0.1"),
+    preprocessors=[
+        functools.partial(
+            t5.data.preprocessors.summarize,
+            article_key="document",
+            summary_key="target"),
+        seqio.preprocessors.tokenize,
+        seqio.CacheDatasetPlaceholder(),
+        seqio.preprocessors.append_eos_after_trim,
+    ],
+    metric_fns=[metrics.bleu, _rouge_fn],
+    output_features=DEFAULT_OUTPUT_FEATURES,
+    )
+
+# ----- SuperGLUE -----
+# The superglue tasks are already present in the task registry from importing
+# the t5.data.tasks file. However, that task and mixture use the t5 sentence
+# piece vocabulary. This task and mixture use the mt5 vocabulary.
+for b in tfds.text.super_glue.SuperGlue.builder_configs.values():
+  # We use a simplified version of WSC, defined below
+  if "wsc" in b.name:
+    continue
+  if b.name == "axb":
+    text_preprocessor = [
+        functools.partial(
+            t5.data.preprocessors.rekey,
+            key_map={
+                "premise": "sentence1",
+                "hypothesis": "sentence2",
+                "label": "label",
+                "idx": "idx",
+            }),
+        t5.data.glue_utils.get_glue_text_preprocessor(b),
+    ]
+  else:
+    text_preprocessor = [t5.data.glue_utils.get_glue_text_preprocessor(b)]
+
+  seqio.TaskRegistry.add(
+      "mt5_super_glue_%s_v102" % b.name,
+      source=seqio.TfdsDataSource(
+          tfds_name="super_glue/%s:1.0.2" % b.name,
+          splits=["test"] if b.name in ["axb", "axg"] else None),
+      preprocessors=text_preprocessor + [
+          seqio.preprocessors.tokenize,
+          seqio.CacheDatasetPlaceholder(),
+          seqio.preprocessors.append_eos_after_trim,
+      ],
+      metric_fns=t5.data.glue_utils.get_super_glue_metric(b.name),
+      output_features=DEFAULT_OUTPUT_FEATURES,
+      postprocess_fn=t5.data.glue_utils.get_glue_postprocess_fn(b))
+
+# ----- DPR -----
+seqio.TaskRegistry.add(
+    "mt5_dpr_v001_simple",
+    source=seqio.TfdsDataSource(tfds_name="definite_pronoun_resolution:1.1.0"),
+    preprocessors=[
+        t5.data.preprocessors.definite_pronoun_resolution_simple,
+        seqio.preprocessors.tokenize,
+        seqio.CacheDatasetPlaceholder(),
+        seqio.preprocessors.append_eos_after_trim,
+    ],
+    metric_fns=[metrics.accuracy],
+    output_features=DEFAULT_OUTPUT_FEATURES)
+
+# ------ WSC ----------
+seqio.TaskRegistry.add(
+    "mt5_super_glue_wsc_v102_simple_train",
+    source=seqio.TfdsDataSource(
+        tfds_name="super_glue/wsc.fixed:1.0.2", splits=["train"]),
+    preprocessors=[
+        functools.partial(
+            t5.data.preprocessors.wsc_simple, correct_referent_only=True),
+        seqio.preprocessors.tokenize,
+        seqio.CacheDatasetPlaceholder(),
+        seqio.preprocessors.append_eos_after_trim,
+    ],
+    metric_fns=[],
+    output_features=DEFAULT_OUTPUT_FEATURES)
+
+seqio.TaskRegistry.add(
+    "mt5_super_glue_wsc_v102_simple_eval",
+    source=seqio.TfdsDataSource(
+        tfds_name="super_glue/wsc.fixed:1.0.2", splits=["validation", "test"]),
+    preprocessors=[
+        functools.partial(
+            t5.data.preprocessors.wsc_simple, correct_referent_only=False),
+        seqio.preprocessors.tokenize,
+        seqio.CacheDatasetPlaceholder(),
+        seqio.preprocessors.append_eos_after_trim,
+    ],
+    postprocess_fn=t5.data.postprocessors.wsc_simple,
+    metric_fns=[metrics.accuracy],
+    output_features=DEFAULT_OUTPUT_FEATURES)
+
+_mt5_super_glue_tasks = {}
+for task, value in t5.data.get_super_glue_weight_mapping().items():
+  _mt5_super_glue_tasks["mt5_" + task] = value
+
+seqio.MixtureRegistry.add("mt5_super_glue_v102_proportional",
+                          list(_mt5_super_glue_tasks.items()))
