@@ -46,7 +46,8 @@ _TASKS = [
     'mt5_wmt15_enfr_v003',
     'mt5_wmt16_enro_v003',
     'mt5_wmt_t2t_ende_v003',
-    'mt5_gem_xsum'
+    'mt5_gem_xsum',
+    'mt5_xnli_translate_train.ar',
 ]
 
 _MIXTURES = [

@@ -125,69 +125,89 @@ XNLI_LANGS = [
     "ur", "vi", "zh"
 ]
 
-seqio.TaskRegistry.add(
-    "mt5_xnli_train",
-    source=seqio.TfdsDataSource(tfds_name="multi_nli:1.1.0", splits=["train"]),
-    preprocessors=[
-        preprocessors.process_mnli,
-        seqio.preprocessors.tokenize,
-        seqio.CacheDatasetPlaceholder(),
-        seqio.preprocessors.append_eos_after_trim,
-    ],
-    output_features=DEFAULT_OUTPUT_FEATURES,
-    metric_fns=[metrics.accuracy])
-for lang in XNLI_LANGS:
+
+def create_xnli_tasks_and_mixtures(task_prefix, task_suffix, output_features):
+  """Helper function to create XNLI tasks and mixtures."""
+  if task_suffix:
+    task_suffix = "_" + task_suffix
   seqio.TaskRegistry.add(
-      "mt5_xnli_dev_test.{}".format(lang),
+      f"{task_prefix}xnli_train{task_suffix}",
+      source=seqio.TfdsDataSource(
+          tfds_name="multi_nli:1.1.0", splits=["train"]),
+      preprocessors=[
+          preprocessors.process_mnli,
+          seqio.preprocessors.tokenize,
+          seqio.CacheDatasetPlaceholder(),
+          seqio.preprocessors.append_eos_after_trim,
+      ],
+      output_features=output_features,
+      metric_fns=[metrics.accuracy])
+  for xnli_lang in XNLI_LANGS:
+    seqio.TaskRegistry.add(
+        f"{task_prefix}xnli_dev_test{task_suffix}.{xnli_lang}",
+        source=seqio.TfdsDataSource(
+            tfds_name="xnli:1.1.0", splits=["validation", "test"]),
+        preprocessors=[
+            functools.partial(
+                preprocessors.process_xnli, target_languages=[xnli_lang]),
+            seqio.preprocessors.tokenize,
+            seqio.CacheDatasetPlaceholder(),
+            seqio.preprocessors.append_eos_after_trim,
+        ],
+        output_features=output_features,
+        metric_fns=[metrics.accuracy])
+    if xnli_lang == "en":
+      continue
+    seqio.TaskRegistry.add(
+        f"{task_prefix}xnli_translate_train{task_suffix}.{xnli_lang}",
+        source=seqio.TfdsDataSource(
+            tfds_name="xtreme_xnli:1.1.0", splits=["train"]),
+        preprocessors=[
+            functools.partial(
+                preprocessors.process_xnli, target_languages=[xnli_lang]),
+            seqio.preprocessors.tokenize,
+            seqio.CacheDatasetPlaceholder(),
+            seqio.preprocessors.append_eos_after_trim,
+        ],
+        output_features=output_features,
+        metric_fns=[metrics.accuracy])
+  seqio.TaskRegistry.add(
+      f"{task_prefix}xnli_dev_test{task_suffix}.all_langs",
       source=seqio.TfdsDataSource(
           tfds_name="xnli:1.1.0", splits=["validation", "test"]),
       preprocessors=[
           functools.partial(
-              preprocessors.process_xnli, target_languages=[lang]),
+              preprocessors.process_xnli, target_languages=XNLI_LANGS),
           seqio.preprocessors.tokenize,
           seqio.CacheDatasetPlaceholder(),
           seqio.preprocessors.append_eos_after_trim,
       ],
-      output_features=DEFAULT_OUTPUT_FEATURES,
+      output_features=output_features,
       metric_fns=[metrics.accuracy])
-  if lang == "en":
-    continue
-  seqio.TaskRegistry.add(
-      "mt5_xnli_translate_train.{}".format(lang),
-      source=seqio.TfdsDataSource(
-          tfds_name="xtreme_xnli:1.1.0", splits=["train"]),
-      preprocessors=[
-          functools.partial(
-              preprocessors.process_xnli, target_languages=[lang]),
-          seqio.preprocessors.tokenize,
-          seqio.CacheDatasetPlaceholder(),
-          seqio.preprocessors.append_eos_after_trim,
-      ],
-      output_features=DEFAULT_OUTPUT_FEATURES,
-      metric_fns=[metrics.accuracy])
-seqio.TaskRegistry.add(
-    "mt5_xnli_dev_test.all_langs",
-    source=seqio.TfdsDataSource(
-        tfds_name="xnli:1.1.0", splits=["validation", "test"]),
-    preprocessors=[
-        functools.partial(
-            preprocessors.process_xnli, target_languages=XNLI_LANGS),
-        seqio.preprocessors.tokenize,
-        seqio.CacheDatasetPlaceholder(),
-        seqio.preprocessors.append_eos_after_trim,
-    ],
-    output_features=DEFAULT_OUTPUT_FEATURES,
-    metric_fns=[metrics.accuracy])
-xnli_zeroshot = (["mt5_xnli_train", "mt5_xnli_dev_test.all_langs"] +
-                 ["mt5_xnli_dev_test.{}".format(lang) for lang in XNLI_LANGS])
-seqio.MixtureRegistry.add("mt5_xnli_zeroshot", xnli_zeroshot, default_rate=1.0)
-xnli_translate_train = xnli_zeroshot + [
-    "mt5_xnli_translate_train.{}".format(lang)
-    for lang in XNLI_LANGS
-    if lang != "en"
-]
-seqio.MixtureRegistry.add(
-    "mt5_xnli_translate_train", xnli_translate_train, default_rate=1.0)
+  xnli_zeroshot = ([
+      f"{task_prefix}xnli_train{task_suffix}",
+      f"{task_prefix}xnli_dev_test{task_suffix}.all_langs"
+  ] + [
+      f"{task_prefix}xnli_dev_test{task_suffix}.{lang}" for lang in XNLI_LANGS
+  ])
+  seqio.MixtureRegistry.add(
+      f"{task_prefix}xnli_zeroshot{task_suffix}",
+      xnli_zeroshot,
+      default_rate=1.0)
+  xnli_translate_train = xnli_zeroshot + [
+      f"{task_prefix}xnli_translate_train{task_suffix}.{lang}"
+      for lang in XNLI_LANGS
+      if lang != "en"
+  ]
+  seqio.MixtureRegistry.add(
+      f"{task_prefix}xnli_translate_train{task_suffix}",
+      xnli_translate_train,
+      default_rate=1.0)
+
+
+create_xnli_tasks_and_mixtures(
+    task_prefix="mt5_", task_suffix="", output_features=DEFAULT_OUTPUT_FEATURES)
+
 
 # ----- PAWS -----
 label_names = ["different_meaning", "paraphrase"]
