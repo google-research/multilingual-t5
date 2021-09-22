@@ -142,6 +142,9 @@ def create_xnli_tasks_and_mixtures(task_prefix, task_suffix, output_features):
       ],
       output_features=output_features,
       metric_fns=[metrics.accuracy])
+  seqio.experimental.add_task_with_sentinels(
+      f"{task_prefix}xnli_train{task_suffix}")
+
   for xnli_lang in XNLI_LANGS:
     seqio.TaskRegistry.add(
         f"{task_prefix}xnli_dev_test{task_suffix}.{xnli_lang}",
@@ -156,6 +159,8 @@ def create_xnli_tasks_and_mixtures(task_prefix, task_suffix, output_features):
         ],
         output_features=output_features,
         metric_fns=[metrics.accuracy])
+    seqio.experimental.add_task_with_sentinels(
+        f"{task_prefix}xnli_dev_test{task_suffix}.{xnli_lang}")
     if xnli_lang == "en":
       continue
     seqio.TaskRegistry.add(
@@ -171,6 +176,8 @@ def create_xnli_tasks_and_mixtures(task_prefix, task_suffix, output_features):
         ],
         output_features=output_features,
         metric_fns=[metrics.accuracy])
+    seqio.experimental.add_task_with_sentinels(
+        f"{task_prefix}xnli_translate_train{task_suffix}.{xnli_lang}")
   seqio.TaskRegistry.add(
       f"{task_prefix}xnli_dev_test{task_suffix}.all_langs",
       source=seqio.TfdsDataSource(
@@ -184,6 +191,9 @@ def create_xnli_tasks_and_mixtures(task_prefix, task_suffix, output_features):
       ],
       output_features=output_features,
       metric_fns=[metrics.accuracy])
+  seqio.experimental.add_task_with_sentinels(
+      f"{task_prefix}xnli_dev_test{task_suffix}.all_langs")
+
   xnli_zeroshot = ([
       f"{task_prefix}xnli_train{task_suffix}",
       f"{task_prefix}xnli_dev_test{task_suffix}.all_langs"
@@ -194,6 +204,20 @@ def create_xnli_tasks_and_mixtures(task_prefix, task_suffix, output_features):
       f"{task_prefix}xnli_zeroshot{task_suffix}",
       xnli_zeroshot,
       default_rate=1.0)
+
+  # Sentinel zero shot mixture.
+  xnli_sentinel_zeroshot = ([
+      f"{task_prefix}xnli_1_sentinel_train{task_suffix}",
+      f"{task_prefix}xnli_1_sentinel_dev_test{task_suffix}.all_langs"
+  ] + [
+      f"{task_prefix}xnli_1_sentinel_dev_test{task_suffix}.{lang}"
+      for lang in XNLI_LANGS
+  ])
+  seqio.MixtureRegistry.add(
+      f"{task_prefix}xnli_1_sentinel_zeroshot{task_suffix}",
+      xnli_sentinel_zeroshot,
+      default_rate=1.0)
+
   xnli_translate_train = xnli_zeroshot + [
       f"{task_prefix}xnli_translate_train{task_suffix}.{lang}"
       for lang in XNLI_LANGS
@@ -202,6 +226,17 @@ def create_xnli_tasks_and_mixtures(task_prefix, task_suffix, output_features):
   seqio.MixtureRegistry.add(
       f"{task_prefix}xnli_translate_train{task_suffix}",
       xnli_translate_train,
+      default_rate=1.0)
+
+  # Sentinel translate mixture.
+  xnli_translate_sentinel_train = xnli_zeroshot + [
+      f"{task_prefix}xnli_translate_1_sentinel_train{task_suffix}.{lang}"
+      for lang in XNLI_LANGS
+      if lang != "en"
+  ]
+  seqio.MixtureRegistry.add(
+      f"{task_prefix}xnli_translate_1_sentinel_train{task_suffix}",
+      xnli_translate_sentinel_train,
       default_rate=1.0)
 
 
