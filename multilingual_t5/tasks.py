@@ -88,6 +88,14 @@ for lang in MC4_LANGS:
 mc4 = ["mc4.{}".format(lang.replace("-", "_")) for lang in MC4_LANGS]
 seqio.MixtureRegistry.add("mc4", mc4, default_rate=DEFAULT_MIX_RATE)
 
+seqio.MixtureRegistry.add("mc4_subset", [
+    ("mc4.en", 1.0),
+    ("mc4.hi", 1.0),
+    ("mc4.ja", 1.0),
+    ("mc4.fr", 1.0),
+])
+
+
 # Wikipedia
 for lang in WIKI_LANGS:
   seqio.TaskRegistry.add(
