@@ -27,7 +27,7 @@ XQUAD_LANGS_TEST = XQUAD_LANGS_TRAIN_DEV + ["en"]
 PAWSX_LANGS = ["de", "en", "es", "fr", "ja", "ko", "zh"]
 
 
-def _merge_langs_dataset_fn(split, shuffle_files, tfds_name, langs):
+def _merge_langs_dataset_fn(split, shuffle_files, tfds_name, langs, seed):
   """Creates a single dataset containing all languages in a tfds dataset.
 
   Loads individual language datasets for the specified languages and
@@ -48,7 +48,10 @@ def _merge_langs_dataset_fn(split, shuffle_files, tfds_name, langs):
   for lang in langs:
     ds.append(tfds.load("{}/{}".format(tfds_name, lang),
                         split=split,
-                        shuffle_files=shuffle_files))
+                        shuffle_files=shuffle_files,
+                        read_config=tfds.ReadConfig(
+                          shuffle_seed=seed)
+                        ))
   all_langs_data = ds[0]
   for lang_data in ds[1:]:
     all_langs_data = all_langs_data.concatenate(lang_data)
@@ -56,7 +59,7 @@ def _merge_langs_dataset_fn(split, shuffle_files, tfds_name, langs):
   return all_langs_data
 
 
-def xquad_all_langs_dataset_fn(split="test", shuffle_files=False):
+def xquad_all_langs_dataset_fn(split="test", shuffle_files=False, seed=None):
   """Creates a single dataset for XQuAD with all its constituent languages.
 
   split and shuffle_files are necessary arguments for dataset_fns.
@@ -69,10 +72,11 @@ def xquad_all_langs_dataset_fn(split="test", shuffle_files=False):
   return _merge_langs_dataset_fn(split=split,
                                  shuffle_files=shuffle_files,
                                  tfds_name="xquad",
-                                 langs=XQUAD_LANGS_TEST)
+                                 langs=XQUAD_LANGS_TEST,
+                                 seed=seed)
 
 
-def pawsx_all_langs_dataset_fn(split="test", shuffle_files=False):
+def pawsx_all_langs_dataset_fn(split="test", shuffle_files=False, seed=None):
   """Creates a single dataset for PAWS-X with all its constituent languages.
 
   split and shuffle_files are necessary arguments for dataset_fns.
@@ -85,5 +89,6 @@ def pawsx_all_langs_dataset_fn(split="test", shuffle_files=False):
   return _merge_langs_dataset_fn(split=split,
                                  shuffle_files=shuffle_files,
                                  tfds_name="paws_x_wiki",
-                                 langs=PAWSX_LANGS)
+                                 langs=PAWSX_LANGS,
+                                 seed=seed)
 
