@@ -1,4 +1,4 @@
-# Copyright 2021 The mT5 Authors.
+# Copyright 2022 The mT5 Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -432,16 +432,49 @@ seqio.TaskRegistry.add(
     output_features=DEFAULT_OUTPUT_FEATURES,
     metric_fns=[metrics.squad])
 
+
 # ----- XQuAD -----
-for lang in utils.XQUAD_LANGS_TRAIN_DEV:
+def create_xquad_tasks_and_mixtures(task_prefix, task_suffix, output_features):
+  """Helper function for XQuad tasks and mixtures."""
+  for xquad_lang in utils.XQUAD_LANGS_TRAIN_DEV:
+    seqio.TaskRegistry.add(
+        f"{task_prefix}xquad_translate_train_dev{task_suffix}.{xquad_lang}",
+        source=seqio.TfdsDataSource(
+            tfds_name="xquad/{}:3.0.0".format(xquad_lang),
+            splits={
+                "train": "translate-train",
+                "validation": "translate-dev"
+            }),
+        preprocessors=[
+            preprocessors.xquad,
+            seqio.preprocessors.tokenize,
+            seqio.CacheDatasetPlaceholder(),
+            seqio.preprocessors.append_eos_after_trim,
+        ],
+        postprocess_fn=t5.data.postprocessors.qa,
+        output_features=output_features,
+        metric_fns=[metrics.squad])
+
+  for xquad_lang in utils.XQUAD_LANGS_TEST:
+    seqio.TaskRegistry.add(
+        f"{task_prefix}xquad_test{task_suffix}.{xquad_lang}",
+        source=seqio.TfdsDataSource(
+            tfds_name=f"xquad/{xquad_lang}:3.0.0", splits=["test"]),
+        preprocessors=[
+            preprocessors.xquad,
+            seqio.preprocessors.tokenize,
+            seqio.CacheDatasetPlaceholder(),
+            seqio.preprocessors.append_eos_after_trim,
+        ],
+        postprocess_fn=t5.data.postprocessors.qa,
+        output_features=output_features,
+        metric_fns=[metrics.squad])
+
+  # Additional test task containing all the languages.
   seqio.TaskRegistry.add(
-      "mt5_xquad_translate_train_dev.{}".format(lang),
-      source=seqio.TfdsDataSource(
-          tfds_name="xquad/{}:3.0.0".format(lang),
-          splits={
-              "train": "translate-train",
-              "validation": "translate-dev"
-          }),
+      f"{task_prefix}xquad_test{task_suffix}.all_langs",
+      source=seqio.FunctionDataSource(
+          dataset_fn=utils.xquad_all_langs_dataset_fn, splits=["test"]),
       preprocessors=[
           preprocessors.xquad,
           seqio.preprocessors.tokenize,
@@ -449,59 +482,37 @@ for lang in utils.XQUAD_LANGS_TRAIN_DEV:
           seqio.preprocessors.append_eos_after_trim,
       ],
       postprocess_fn=t5.data.postprocessors.qa,
-      output_features=DEFAULT_OUTPUT_FEATURES,
+      output_features=output_features,
       metric_fns=[metrics.squad])
 
-for lang in utils.XQUAD_LANGS_TEST:
-  seqio.TaskRegistry.add(
-      "mt5_xquad_test.{}".format(lang),
-      source=seqio.TfdsDataSource(
-          tfds_name="xquad/{}:3.0.0".format(lang), splits=["test"]),
-      preprocessors=[
-          preprocessors.xquad,
-          seqio.preprocessors.tokenize,
-          seqio.CacheDatasetPlaceholder(),
-          seqio.preprocessors.append_eos_after_trim,
-      ],
-      postprocess_fn=t5.data.postprocessors.qa,
-      output_features=DEFAULT_OUTPUT_FEATURES,
-      metric_fns=[metrics.squad])
+  # XQuAD Zero-Shot (SQuAD train, SQuAD dev, XQuAD test).
+  xquad_test = ([f"{task_prefix}xquad_test{task_suffix}.{xquad_lang}"
+                 for xquad_lang in utils.XQUAD_LANGS_TEST])
+  xquad_zeroshot = ([f"{task_prefix}squad_train_dev{task_suffix}",
+                     f"{task_prefix}xquad_test{task_suffix}.all_langs"] +
+                    xquad_test)
+  seqio.MixtureRegistry.add(
+      f"{task_prefix}xquad_zeroshot{task_suffix}",
+      xquad_zeroshot,
+      default_rate=1.0)
 
-# Additional test task containing all the languages.
-seqio.TaskRegistry.add(
-    "mt5_xquad_test.all_langs",
-    source=seqio.FunctionDataSource(
-        dataset_fn=utils.xquad_all_langs_dataset_fn, splits=["test"]),
-    preprocessors=[
-        preprocessors.xquad,
-        seqio.preprocessors.tokenize,
-        seqio.CacheDatasetPlaceholder(),
-        seqio.preprocessors.append_eos_after_trim,
-    ],
-    postprocess_fn=t5.data.postprocessors.qa,
-    output_features=DEFAULT_OUTPUT_FEATURES,
-    metric_fns=[metrics.squad])
+  # XQuAD Translate-Train (English SQuAD, XQuAD translate-train,
+  # XQuAD translate-dev, XQuAD test)
+  # Note that the QA translate-train baselines from Hu et al (XTREME)
+  # do not include the English data. However, Fang et al (FILTER) do include
+  # English data.
+  xquad_translate_train = [
+      f"{task_prefix}xquad_translate_train_dev{task_suffix}.{xquad_lang}"
+      for xquad_lang in utils.XQUAD_LANGS_TRAIN_DEV
+  ] + [f"{task_prefix}squad_train_dev{task_suffix}"
+      ] + [f"{task_prefix}xquad_test{task_suffix}.all_langs"] + xquad_test
+  seqio.MixtureRegistry.add(
+      f"{task_prefix}xquad_translate_train{task_suffix}",
+      xquad_translate_train,
+      default_rate=1.0)
 
-# XQuAD Zero-Shot (SQuAD train, SQuAD dev, XQuAD test).
-xquad_test = (["mt5_xquad_test.{}".format(lang)
-               for lang in utils.XQUAD_LANGS_TEST])
-xquad_zeroshot = (["mt5_squad_train_dev", "mt5_xquad_test.all_langs"] +
-                  xquad_test)
-seqio.MixtureRegistry.add(
-    "mt5_xquad_zeroshot", xquad_zeroshot, default_rate=1.0)
-
-# XQuAD Translate-Train (English SQuAD, XQuAD translate-train,
-# XQuAD translate-dev, XQuAD test)
-# Note that the QA translate-train baselines from Hu et al (XTREME)
-# do not include the English data. However, Fang et al (FILTER) do include
-# English data.
-xquad_translate_train = [
-    "mt5_xquad_translate_train_dev.{}".format(lang)
-    for lang in utils.XQUAD_LANGS_TRAIN_DEV
-] + ["mt5_squad_train_dev"] +  ["mt5_xquad_test.all_langs"] + xquad_test
-seqio.MixtureRegistry.add(
-    "mt5_xquad_translate_train", xquad_translate_train, default_rate=1.0)
-
+create_xquad_tasks_and_mixtures(
+    task_prefix="mt5_", task_suffix="", output_features=DEFAULT_OUTPUT_FEATURES)
 
 # ----- MLQA -----
 
