@@ -417,25 +417,24 @@ tydiqa_translate_train = (
 seqio.MixtureRegistry.add(
     "mt5_tydiqa_translate_train", tydiqa_translate_train, default_rate=1.0)
 
-# ----- English SQUAD -----
-seqio.TaskRegistry.add(
-    "mt5_squad_train_dev",
-    source=seqio.TfdsDataSource(
-        tfds_name="squad/v1.1:3.0.0", splits=["train", "validation"]),
-    preprocessors=[
-        preprocessors.xquad,
-        seqio.preprocessors.tokenize,
-        seqio.CacheDatasetPlaceholder(),
-        seqio.preprocessors.append_eos_after_trim,
-    ],
-    postprocess_fn=t5.data.postprocessors.qa,
-    output_features=DEFAULT_OUTPUT_FEATURES,
-    metric_fns=[metrics.squad])
-
 
 # ----- XQuAD -----
 def create_xquad_tasks_and_mixtures(task_prefix, task_suffix, output_features):
   """Helper function for XQuad tasks and mixtures."""
+  # ----- English SQUAD -----
+  seqio.TaskRegistry.add(
+      f"{task_prefix}squad_train_dev{task_suffix}",
+      source=seqio.TfdsDataSource(
+          tfds_name="squad/v1.1:3.0.0", splits=["train", "validation"]),
+      preprocessors=[
+          preprocessors.xquad,
+          seqio.preprocessors.tokenize,
+          seqio.CacheDatasetPlaceholder(),
+          seqio.preprocessors.append_eos_after_trim,
+      ],
+      postprocess_fn=t5.data.postprocessors.qa,
+      output_features=output_features,
+      metric_fns=[metrics.squad])
   for xquad_lang in utils.XQUAD_LANGS_TRAIN_DEV:
     seqio.TaskRegistry.add(
         f"{task_prefix}xquad_translate_train_dev{task_suffix}.{xquad_lang}",
