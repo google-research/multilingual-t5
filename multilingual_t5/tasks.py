@@ -358,9 +358,11 @@ for lang in TYDIQA_LANGS:
       output_features=DEFAULT_OUTPUT_FEATURES,
       metric_fns=[metrics.squad])
 
-tydiqa = (["mt5_tydiqa_train_dev"] +
-          ["mt5_tydiqa_dev.{}".format(lang) for lang in TYDIQA_LANGS])
+tydiqa_dev = ["mt5_tydiqa_dev.{}".format(lang) for lang in TYDIQA_LANGS]
+tydiqa = ["mt5_tydiqa_train_dev"] + tydiqa_dev
 seqio.MixtureRegistry.add("mt5_tydiqa", tydiqa, default_rate=1.0)
+
+seqio.MixtureRegistry.add("mt5_tydiqa_dev", tydiqa_dev, default_rate=1.0)
 
 # ----- TyDiQA GoldP Zero-Shot-----
 # This Zero-Shot setting matches the XTREME setup, where training is done on
