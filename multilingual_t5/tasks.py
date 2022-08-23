@@ -17,6 +17,7 @@ import functools
 
 from multilingual_t5 import preprocessors
 from multilingual_t5 import utils
+from multilingual_t5 import vocab
 from multilingual_t5.evaluation import metrics as mt5_metrics
 
 import seqio
@@ -25,19 +26,21 @@ import t5.data.tasks
 from t5.evaluation import metrics
 import tensorflow_datasets as tfds
 
-DEFAULT_SPM_PATH = "gs://t5-data/vocabs/mc4.250000.100extra/sentencepiece.model"
+# TODO: remove this after users have switched to
+# using references from vocab.py
+DEFAULT_VOCAB = vocab.DEFAULT_VOCAB
 
 
 DEFAULT_TEMPERATURE = 1.0 / 0.3
 DEFAULT_MIX_RATE = functools.partial(
     t5.data.rate_num_examples, temperature=DEFAULT_TEMPERATURE)
 
-DEFAULT_VOCAB = t5.data.SentencePieceVocabulary(DEFAULT_SPM_PATH)
 DEFAULT_OUTPUT_FEATURES = {
-    "inputs": t5.data.Feature(
-        vocabulary=DEFAULT_VOCAB, add_eos=True, required=False),
-    "targets": t5.data.Feature(
-        vocabulary=DEFAULT_VOCAB, add_eos=True)
+    "inputs":
+        t5.data.Feature(
+            vocabulary=vocab.DEFAULT_VOCAB, add_eos=True, required=False),
+    "targets":
+        t5.data.Feature(vocabulary=vocab.DEFAULT_VOCAB, add_eos=True)
 }
 
 MC4_LANGS = tfds.text.c4.MC4_LANGUAGES
@@ -53,10 +56,10 @@ WIKI_LANGS = [
     "es", "et", "eu", "fa", "fi", "fr", "fy", "ga", "gl", "gu", "he", "hi",
     "hr", "ht", "hu", "hy", "id", "io", "is", "it", "ja", "jv", "ka", "kk",
     "kn", "ko", "ky", "la", "lb", "lmo", "lt", "lv", "mg", "min", "mk", "ml",
-    "mn", "mr", "ms", "my", "nds-nl", "ne", "new", "nl", "nn", "no", "oc",
-    "pa", "pl", "pms", "pnb", "pt", "ro", "ru", "scn", "sco", "sh", "sk", "sl",
-    "sq", "sr", "su", "sv", "sw", "ta", "te", "tg", "th", "tl", "tr", "tt",
-    "uk", "ur", "uz", "vi", "vo", "war", "yo", "zh"
+    "mn", "mr", "ms", "my", "nds-nl", "ne", "new", "nl", "nn", "no", "oc", "pa",
+    "pl", "pms", "pnb", "pt", "ro", "ru", "scn", "sco", "sh", "sk", "sl", "sq",
+    "sr", "su", "sv", "sw", "ta", "te", "tg", "th", "tl", "tr", "tt", "uk",
+    "ur", "uz", "vi", "vo", "war", "yo", "zh"
 ]
 
 # =========================== Pretraining Tasks/Mixtures =======================
@@ -208,7 +211,6 @@ def create_xnli_tasks_and_mixtures(task_prefix, task_suffix, output_features):
 create_xnli_tasks_and_mixtures(
     task_prefix="mt5_", task_suffix="", output_features=DEFAULT_OUTPUT_FEATURES)
 
-
 # ----- PAWS -----
 label_names = ["different_meaning", "paraphrase"]
 text_preprocessor = functools.partial(
@@ -219,8 +221,7 @@ text_preprocessor = functools.partial(
     id_key=None)
 
 postprocess_fn = functools.partial(
-        t5.data.postprocessors.string_label_to_class_id,
-        label_classes=label_names)
+    t5.data.postprocessors.string_label_to_class_id, label_classes=label_names)
 
 seqio.TaskRegistry.add(
     "mt5_paws",
@@ -302,7 +303,7 @@ seqio.TaskRegistry.add(
 pawsx_eval = [
     "mt5_pawsx_dev_test.{}".format(lang) for lang in utils.PAWSX_LANGS
 ] + ["mt5_pawsx_dev_test.all_langs"]
-pawsx = ["mt5_paws"] +  pawsx_eval
+pawsx = ["mt5_paws"] + pawsx_eval
 seqio.MixtureRegistry.add("mt5_pawsx_zeroshot", pawsx, default_rate=1.0)
 
 pawsx_translate_train = ["mt5_paws"] + [
@@ -321,7 +322,6 @@ seqio.MixtureRegistry.add(
     "mt5_pawsx_translate_train_original",
     pawsx_translate_train,
     default_rate=1.0)
-
 
 # ----- TyDiQA GoldP-----
 # The "validation" split contains all the validation examples for all the
@@ -387,7 +387,6 @@ tydiqa_zeroshot = (["mt5_tydiqa_train.en"] +
                    ["mt5_tydiqa_dev.{}".format(lang) for lang in TYDIQA_LANGS])
 seqio.MixtureRegistry.add(
     "mt5_tydiqa_zeroshot", tydiqa_zeroshot, default_rate=1.0)
-
 
 # Defining translate-train tasks.
 for lang in TYDIQA_LANGS:
@@ -485,11 +484,14 @@ def create_xquad_tasks_and_mixtures(task_prefix, task_suffix, output_features):
       metric_fns=[metrics.squad])
 
   # XQuAD Zero-Shot (SQuAD train, SQuAD dev, XQuAD test).
-  xquad_test = ([f"{task_prefix}xquad_test{task_suffix}.{xquad_lang}"
-                 for xquad_lang in utils.XQUAD_LANGS_TEST])
-  xquad_zeroshot = ([f"{task_prefix}squad_train_dev{task_suffix}",
-                     f"{task_prefix}xquad_test{task_suffix}.all_langs"] +
-                    xquad_test)
+  xquad_test = ([
+      f"{task_prefix}xquad_test{task_suffix}.{xquad_lang}"
+      for xquad_lang in utils.XQUAD_LANGS_TEST
+  ])
+  xquad_zeroshot = ([
+      f"{task_prefix}squad_train_dev{task_suffix}",
+      f"{task_prefix}xquad_test{task_suffix}.all_langs"
+  ] + xquad_test)
   seqio.MixtureRegistry.add(
       f"{task_prefix}xquad_zeroshot{task_suffix}",
       xquad_zeroshot,
@@ -509,6 +511,7 @@ def create_xquad_tasks_and_mixtures(task_prefix, task_suffix, output_features):
       f"{task_prefix}xquad_translate_train{task_suffix}",
       xquad_translate_train,
       default_rate=1.0)
+
 
 create_xquad_tasks_and_mixtures(
     task_prefix="mt5_", task_suffix="", output_features=DEFAULT_OUTPUT_FEATURES)
@@ -547,7 +550,6 @@ mlqa_translate_train = [
 
 seqio.MixtureRegistry.add(
     "mt5_mlqa_translate_train", mlqa_translate_train, default_rate=1.0)
-
 
 # ----- WikiAnn NER -----
 
@@ -599,7 +601,6 @@ seqio.MixtureRegistry.add(
     ["mt5_ner_eval.{}".format(lang) for lang in NER_LANGS],
     default_rate=1.0)
 
-
 # ----- GLUE -----
 # The glue tasks are already present in the task registry from importing the
 # t5.data.tasks file. However, that task and mixture use the t5 sentence piece
@@ -627,7 +628,6 @@ seqio.MixtureRegistry.add(
         for k, v in t5.data.glue_utils.get_glue_weight_mapping().items()
     }.items()))
 
-
 # ============== Summarization ==============
 # ----- CNN/DailyMail -----
 seqio.TaskRegistry.add(
@@ -647,8 +647,7 @@ seqio.TaskRegistry.add(
 
 # ----- GEM-XSum -----
 _rouge_fn = functools.partial(
-    metrics.rouge,
-    score_keys=["rouge1", "rouge2", "rougeL", "rougeLsum"])
+    metrics.rouge, score_keys=["rouge1", "rouge2", "rougeL", "rougeLsum"])
 
 seqio.TaskRegistry.add(
     "mt5_gem_xsum",
@@ -664,7 +663,7 @@ seqio.TaskRegistry.add(
     ],
     metric_fns=[metrics.bleu, _rouge_fn],
     output_features=DEFAULT_OUTPUT_FEATURES,
-    )
+)
 
 # ----- SuperGLUE -----
 # The superglue tasks are already present in the task registry from importing
