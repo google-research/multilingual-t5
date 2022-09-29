@@ -320,7 +320,7 @@ pawsx_translate_train_original = [
 ] + pawsx_eval
 seqio.MixtureRegistry.add(
     "mt5_pawsx_translate_train_original",
-    pawsx_translate_train,
+    pawsx_translate_train_original,
     default_rate=1.0)
 
 # ----- TyDiQA GoldP-----
