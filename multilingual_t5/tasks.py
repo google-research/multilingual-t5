@@ -212,36 +212,84 @@ create_xnli_tasks_and_mixtures(
     task_prefix="mt5_", task_suffix="", output_features=DEFAULT_OUTPUT_FEATURES)
 
 # ----- PAWS -----
-label_names = ["different_meaning", "paraphrase"]
-text_preprocessor = functools.partial(
-    t5.data.preprocessors.glue,
-    benchmark_name="paws",
-    label_names=label_names,
-    feature_names=["sentence1", "sentence2"],
-    id_key=None)
 
-postprocess_fn = functools.partial(
-    t5.data.postprocessors.string_label_to_class_id, label_classes=label_names)
+def create_paws_tasks_and_mixtures(task_prefix, task_suffix, output_features):
+  label_names = ["different_meaning", "paraphrase"]
+  text_preprocessor = functools.partial(
+      t5.data.preprocessors.glue,
+      benchmark_name="paws",
+      label_names=label_names,
+      feature_names=["sentence1", "sentence2"],
+      id_key=None)
 
-seqio.TaskRegistry.add(
-    "mt5_paws",
-    source=seqio.TfdsDataSource(
-        tfds_name="paws_x_wiki/en:1.0.0", splits=["train"]),
-    preprocessors=[
-        text_preprocessor,
-        seqio.preprocessors.tokenize,
-        seqio.CacheDatasetPlaceholder(),
-        seqio.preprocessors.append_eos_after_trim,
-    ],
-    output_features=DEFAULT_OUTPUT_FEATURES,
-    postprocess_fn=postprocess_fn,
-    metric_fns=[metrics.accuracy])
+  postprocess_fn = functools.partial(
+      t5.data.postprocessors.string_label_to_class_id, label_classes=label_names)
 
-for lang in utils.PAWSX_LANGS:
   seqio.TaskRegistry.add(
-      "mt5_pawsx_dev_test.{}".format(lang),
+      f"{task_prefix}paws{task_suffix}",
       source=seqio.TfdsDataSource(
-          tfds_name="paws_x_wiki/{}:1.0.0".format(lang),
+          tfds_name="paws_x_wiki/en:1.0.0", splits=["train"]),
+      preprocessors=[
+          text_preprocessor,
+          seqio.preprocessors.tokenize,
+          seqio.CacheDatasetPlaceholder(),
+          seqio.preprocessors.append_eos_after_trim,
+      ],
+      output_features=output_features,
+      postprocess_fn=postprocess_fn,
+      metric_fns=[metrics.accuracy])
+
+  for lang in utils.PAWSX_LANGS:
+    seqio.TaskRegistry.add(
+        f"{task_prefix}pawsx_dev_test{task_suffix}.{lang}",
+        source=seqio.TfdsDataSource(
+            tfds_name="paws_x_wiki/{}:1.0.0".format(lang),
+            splits=["validation", "test"]),
+        preprocessors=[
+            text_preprocessor,
+            seqio.preprocessors.tokenize,
+            seqio.CacheDatasetPlaceholder(),
+            seqio.preprocessors.append_eos_after_trim,
+        ],
+        output_features=output_features,
+        postprocess_fn=postprocess_fn,
+        metric_fns=[metrics.accuracy])
+
+    # This uses machine translations provided by the PAWS-X paper.
+    seqio.TaskRegistry.add(
+        f"{task_prefix}pawsx_translate_train_original{task_suffix}.{lang}",
+        source=seqio.TfdsDataSource(
+            tfds_name="paws_x_wiki/{}:1.0.0".format(lang), splits=["train"]),
+        preprocessors=[
+            text_preprocessor,
+            seqio.preprocessors.tokenize,
+            seqio.CacheDatasetPlaceholder(),
+            seqio.preprocessors.append_eos_after_trim,
+        ],
+        output_features=output_features,
+        postprocess_fn=postprocess_fn,
+        metric_fns=[metrics.accuracy])
+
+    if lang != "en":
+      # This uses machine translations provided by the XTREME paper.
+      seqio.TaskRegistry.add(
+          f"{task_prefix}pawsx_translate_train{task_suffix}.{lang}",
+          source=seqio.TfdsDataSource(
+              tfds_name="xtreme_pawsx/{}:1.0.0".format(lang), splits=["train"]),
+          preprocessors=[
+              text_preprocessor,
+              seqio.preprocessors.tokenize,
+              seqio.CacheDatasetPlaceholder(),
+              seqio.preprocessors.append_eos_after_trim,
+          ],
+          output_features=output_features,
+          postprocess_fn=postprocess_fn,
+          metric_fns=[metrics.accuracy])
+
+  seqio.TaskRegistry.add(
+      f"{task_prefix}pawsx_dev_test{task_suffix}.all_langs",
+      source=seqio.FunctionDataSource(
+          dataset_fn=utils.pawsx_all_langs_dataset_fn,
           splits=["validation", "test"]),
       preprocessors=[
           text_preprocessor,
@@ -249,79 +297,40 @@ for lang in utils.PAWSX_LANGS:
           seqio.CacheDatasetPlaceholder(),
           seqio.preprocessors.append_eos_after_trim,
       ],
-      output_features=DEFAULT_OUTPUT_FEATURES,
+      output_features=output_features,
       postprocess_fn=postprocess_fn,
       metric_fns=[metrics.accuracy])
 
-  # This uses machine translations provided by the PAWS-X paper.
-  seqio.TaskRegistry.add(
-      "mt5_pawsx_translate_train_original.{}".format(lang),
-      source=seqio.TfdsDataSource(
-          tfds_name="paws_x_wiki/{}:1.0.0".format(lang), splits=["train"]),
-      preprocessors=[
-          text_preprocessor,
-          seqio.preprocessors.tokenize,
-          seqio.CacheDatasetPlaceholder(),
-          seqio.preprocessors.append_eos_after_trim,
-      ],
-      output_features=DEFAULT_OUTPUT_FEATURES,
-      postprocess_fn=postprocess_fn,
-      metric_fns=[metrics.accuracy])
+  # PAWSX Zero-Shot
+  pawsx_eval = [
+      f"{task_prefix}pawsx_dev_test{task_suffix}.{lang}"
+      for lang in utils.PAWSX_LANGS
+  ] + [f"{task_prefix}pawsx_dev_test{task_suffix}.all_langs"]
+  pawsx = [f"{task_prefix}paws{task_suffix}"] + pawsx_eval
+  seqio.MixtureRegistry.add(
+      f"{task_prefix}pawsx_zeroshot{task_suffix}", pawsx, default_rate=1.0)
 
-  if lang != "en":
-    # This uses machine translations provided by the XTREME paper.
-    seqio.TaskRegistry.add(
-        "mt5_pawsx_translate_train.{}".format(lang),
-        source=seqio.TfdsDataSource(
-            tfds_name="xtreme_pawsx/{}:1.0.0".format(lang), splits=["train"]),
-        preprocessors=[
-            text_preprocessor,
-            seqio.preprocessors.tokenize,
-            seqio.CacheDatasetPlaceholder(),
-            seqio.preprocessors.append_eos_after_trim,
-        ],
-        output_features=DEFAULT_OUTPUT_FEATURES,
-        postprocess_fn=postprocess_fn,
-        metric_fns=[metrics.accuracy])
+  pawsx_translate_train = [f"{task_prefix}paws{task_suffix}"] + [
+      f"{task_prefix}pawsx_translate_train{task_suffix}.{lang}"
+      for lang in utils.PAWSX_LANGS
+      if lang != "en"
+  ] + pawsx_eval
+  seqio.MixtureRegistry.add(
+      f"{task_prefix}pawsx_translate_train{task_suffix}",
+      pawsx_translate_train,
+      default_rate=1.0)
 
-seqio.TaskRegistry.add(
-    "mt5_pawsx_dev_test.all_langs",
-    source=seqio.FunctionDataSource(
-        dataset_fn=utils.pawsx_all_langs_dataset_fn,
-        splits=["validation", "test"]),
-    preprocessors=[
-        text_preprocessor,
-        seqio.preprocessors.tokenize,
-        seqio.CacheDatasetPlaceholder(),
-        seqio.preprocessors.append_eos_after_trim,
-    ],
-    output_features=DEFAULT_OUTPUT_FEATURES,
-    postprocess_fn=postprocess_fn,
-    metric_fns=[metrics.accuracy])
+  pawsx_translate_train_original = [
+      f"{task_prefix}pawsx_translate_train_original{task_suffix}.{lang}"
+      for lang in utils.PAWSX_LANGS
+  ] + pawsx_eval
+  seqio.MixtureRegistry.add(
+      f"{task_prefix}pawsx_translate_train_original{task_suffix}",
+      pawsx_translate_train,
+      default_rate=1.0)
 
-# PAWSX Zero-Shot
-pawsx_eval = [
-    "mt5_pawsx_dev_test.{}".format(lang) for lang in utils.PAWSX_LANGS
-] + ["mt5_pawsx_dev_test.all_langs"]
-pawsx = ["mt5_paws"] + pawsx_eval
-seqio.MixtureRegistry.add("mt5_pawsx_zeroshot", pawsx, default_rate=1.0)
-
-pawsx_translate_train = ["mt5_paws"] + [
-    "mt5_pawsx_translate_train.{}".format(lang)
-    for lang in utils.PAWSX_LANGS
-    if lang != "en"
-] + pawsx_eval
-seqio.MixtureRegistry.add(
-    "mt5_pawsx_translate_train", pawsx_translate_train, default_rate=1.0)
-
-pawsx_translate_train_original = [
-    "mt5_pawsx_translate_train_original.{}".format(lang)
-    for lang in utils.PAWSX_LANGS
-] + pawsx_eval
-seqio.MixtureRegistry.add(
-    "mt5_pawsx_translate_train_original",
-    pawsx_translate_train_original,
-    default_rate=1.0)
+create_paws_tasks_and_mixtures(
+    task_prefix="mt5_", task_suffix="", output_features=DEFAULT_OUTPUT_FEATURES)
 
 # ----- TyDiQA GoldP-----
 # The "validation" split contains all the validation examples for all the
@@ -518,88 +527,102 @@ create_xquad_tasks_and_mixtures(
 
 # ----- MLQA -----
 
-MLQA_LANGS = ["ar", "de", "en", "es", "hi", "vi", "zh"]
 
-for lang in MLQA_LANGS:
-  seqio.TaskRegistry.add(
-      "mt5_mlqa_dev_test.{}".format(lang),
-      source=seqio.TfdsDataSource(
-          tfds_name="mlqa/{}:1.0.0".format(lang), splits=["validation",
-                                                          "test"]),
-      preprocessors=[
-          preprocessors.xquad,
-          seqio.preprocessors.tokenize,
-          seqio.CacheDatasetPlaceholder(),
-          seqio.preprocessors.append_eos_after_trim,
-      ],
-      postprocess_fn=t5.data.postprocessors.qa,
-      output_features=DEFAULT_OUTPUT_FEATURES,
-      metric_fns=[functools.partial(mt5_metrics.mlqa, lang=lang)])
+def create_mlqa_tasks_and_mixtures(task_prefix, task_suffix, output_features):
+  MLQA_LANGS = ["ar", "de", "en", "es", "hi", "vi", "zh"]
 
-# MLQA Zero-Shot
-mlqa_dev_test = [f"mt5_mlqa_dev_test.{lang}" for lang in MLQA_LANGS]
-mlqa_zeroshot = ["mt5_squad_train_dev"] + mlqa_dev_test
-seqio.MixtureRegistry.add("mt5_mlqa_zeroshot", mlqa_zeroshot, default_rate=1.0)
+  for lang in MLQA_LANGS:
+    seqio.TaskRegistry.add(
+        f"{task_prefix}mlqa_dev_test{task_suffix}.{lang}",
+        source=seqio.TfdsDataSource(
+            tfds_name="mlqa/{}:1.0.0".format(lang), splits=["validation",
+                                                            "test"]),
+        preprocessors=[
+            preprocessors.xquad,
+            seqio.preprocessors.tokenize,
+            seqio.CacheDatasetPlaceholder(),
+            seqio.preprocessors.append_eos_after_trim,
+        ],
+        postprocess_fn=t5.data.postprocessors.qa,
+        output_features=output_features,
+        metric_fns=[functools.partial(mt5_metrics.mlqa, lang=lang)])
 
-# MLQA Translate-Train
-mlqa_translate_train = [
-    "mt5_xquad_translate_train_dev.{}".format(lang)
-    for lang in MLQA_LANGS
-    if lang != "en"
-] + ["mt5_squad_train_dev"] + mlqa_dev_test
+  # MLQA Zero-Shot
+  mlqa_dev_test = [f"{task_prefix}mlqa_dev_test{task_suffix}.{lang}" for lang in MLQA_LANGS]
+  mlqa_zeroshot = [f"{task_prefix}squad_train_dev{task_suffix}"] + mlqa_dev_test
+  seqio.MixtureRegistry.add(f"{task_prefix}mlqa_zeroshot{task_suffix}", mlqa_zeroshot, default_rate=1.0)
 
-seqio.MixtureRegistry.add(
-    "mt5_mlqa_translate_train", mlqa_translate_train, default_rate=1.0)
+  # MLQA Translate-Train
+  mlqa_translate_train = [
+      f"{task_prefix}xquad_translate_train_dev{task_suffix}.{lang}"
+      for lang in MLQA_LANGS
+      if lang != "en"
+  ] + [f"{task_prefix}squad_train_dev{task_suffix}"] + mlqa_dev_test
+
+  seqio.MixtureRegistry.add(
+      f"{task_prefix}mlqa_translate_train{task_suffix}",
+      mlqa_translate_train,
+      default_rate=1.0)
+
+
+create_mlqa_tasks_and_mixtures(
+    task_prefix="mt5_", task_suffix="", output_features=DEFAULT_OUTPUT_FEATURES)
+
 
 # ----- WikiAnn NER -----
+def create_wikiann_ner_tasks_and_mixtures(task_prefix, task_suffix,
+                                          output_features):
+  NER_LANGS = [
+      "af", "ar", "bg", "bn", "de", "el", "en", "es", "et", "eu", "fa", "fi",
+      "fr", "he", "hi", "hu", "id", "it", "ja", "jv", "ka", "kk", "ko", "ml",
+      "mr", "ms", "my", "nl", "pt", "ru", "sw", "ta", "te", "th", "tl", "tr",
+      "ur", "vi", "yo", "zh"
+  ]
 
-NER_LANGS = [
-    "af", "ar", "bg", "bn", "de", "el", "en", "es", "et", "eu", "fa", "fi",
-    "fr", "he", "hi", "hu", "id", "it", "ja", "jv", "ka", "kk", "ko", "ml",
-    "mr", "ms", "my", "nl", "pt", "ru", "sw", "ta", "te", "th", "tl", "tr",
-    "ur", "vi", "yo", "zh"
-]
+  for lang in NER_LANGS:
+    seqio.TaskRegistry.add(
+        f"{task_prefix}ner_train{task_suffix}.{lang}",
+        source=seqio.TfdsDataSource(
+            tfds_name="wikiann/{}:1.0.0".format(lang), splits=["train"]),
+        preprocessors=[
+            preprocessors.wikiann,
+            seqio.preprocessors.tokenize,
+            seqio.CacheDatasetPlaceholder(),
+            seqio.preprocessors.append_eos_after_trim,
+        ],
+        output_features=output_features,
+        metric_fns=[mt5_metrics.span_f1])
 
-for lang in NER_LANGS:
-  seqio.TaskRegistry.add(
-      "mt5_ner_train.{}".format(lang),
-      source=seqio.TfdsDataSource(
-          tfds_name="wikiann/{}:1.0.0".format(lang), splits=["train"]),
-      preprocessors=[
-          preprocessors.wikiann,
-          seqio.preprocessors.tokenize,
-          seqio.CacheDatasetPlaceholder(),
-          seqio.preprocessors.append_eos_after_trim,
-      ],
-      output_features=DEFAULT_OUTPUT_FEATURES,
-      metric_fns=[mt5_metrics.span_f1])
+    seqio.TaskRegistry.add(
+        f"{task_prefix}ner_eval{task_suffix}.{lang}",
+        source=seqio.TfdsDataSource(
+            tfds_name="wikiann/{}:1.0.0".format(lang),
+            splits=["validation", "test"]),
+        preprocessors=[
+            preprocessors.wikiann,
+            seqio.preprocessors.tokenize,
+            seqio.CacheDatasetPlaceholder(),
+            seqio.preprocessors.append_eos_after_trim,
+        ],
+        output_features=output_features,
+        metric_fns=[mt5_metrics.span_f1])
 
-  seqio.TaskRegistry.add(
-      "mt5_ner_eval.{}".format(lang),
-      source=seqio.TfdsDataSource(
-          tfds_name="wikiann/{}:1.0.0".format(lang),
-          splits=["validation", "test"]),
-      preprocessors=[
-          preprocessors.wikiann,
-          seqio.preprocessors.tokenize,
-          seqio.CacheDatasetPlaceholder(),
-          seqio.preprocessors.append_eos_after_trim,
-      ],
-      output_features=DEFAULT_OUTPUT_FEATURES,
-      metric_fns=[mt5_metrics.span_f1])
+  # NER zero-shot
+  seqio.MixtureRegistry.add(
+      f"{task_prefix}ner_zeroshot{task_suffix}",
+      [f"{task_prefix}ner_train{task_suffix}.en"] +
+      [f"{task_prefix}ner_eval{task_suffix}.{lang}" for lang in NER_LANGS],
+      default_rate=1.0)
 
-# NER zero-shot
-seqio.MixtureRegistry.add(
-    "mt5_ner_zeroshot", ["mt5_ner_train.{}".format("en")] +
-    ["mt5_ner_eval.{}".format(lang) for lang in NER_LANGS],
-    default_rate=1.0)
+  # NER multilingual
+  seqio.MixtureRegistry.add(
+      f"{task_prefix}ner_multilingual{task_suffix}",
+      [f"{task_prefix}ner_train{task_suffix}.{lang}" for lang in NER_LANGS] +
+      [f"{task_prefix}ner_eval{task_suffix}.{lang}" for lang in NER_LANGS],
+      default_rate=1.0)
 
-# NER multilingual
-seqio.MixtureRegistry.add(
-    "mt5_ner_multilingual",
-    ["mt5_ner_train.{}".format(lang) for lang in NER_LANGS] +
-    ["mt5_ner_eval.{}".format(lang) for lang in NER_LANGS],
-    default_rate=1.0)
+create_wikiann_ner_tasks_and_mixtures(
+    task_prefix="mt5_", task_suffix="", output_features=DEFAULT_OUTPUT_FEATURES)
 
 # ----- GLUE -----
 # The glue tasks are already present in the task registry from importing the
