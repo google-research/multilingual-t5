@@ -14,9 +14,9 @@
 
 """Defines the vocabulary for multilingual t5."""
 
-import t5.data
+import seqio
 
 DEFAULT_SPM_PATH = "gs://t5-data/vocabs/mc4.250000.100extra/sentencepiece.model"
 
 
-DEFAULT_VOCAB = t5.data.SentencePieceVocabulary(DEFAULT_SPM_PATH)
+DEFAULT_VOCAB = seqio.SentencePieceVocabulary(DEFAULT_SPM_PATH)
